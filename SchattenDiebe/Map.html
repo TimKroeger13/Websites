@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Die Karte der Schattendiebe</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</body>
+
+
+<script>
+    function getQueryParams() {
+        var params = {};
+        var queryString = window.location.search.substring(1);
+        var regex = /([^&=]+)=([^&]*)/g;
+        var match;
+        while (match = regex.exec(queryString)) {
+            params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+        }
+        return params;
+    }
+
+    var params = getQueryParams();
+    var lat = parseFloat(params.lat) || 2000;  // Default latitude
+    var lng = parseFloat(params.lng) || 2000;  // Default longitude
+    var zoom = parseInt(params.zoom) || -1;    // Default zoom level
+
+    var map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: -2,
+        maxZoom: 10,
+        maxBoundsViscosity: 1.0
+    });
+
+    var img1 = new Image();
+    img1.src = 'Map_Drawing_BaDardun.png';
+    img1.onload = function () {
+        var width1 = img1.width;
+        var height1 = img1.height;
+
+        var BoundaryHight1 = 2968;
+        var BoundaryWidth1 = 4002;
+
+        var bounds1 = [[0, 0], [BoundaryHight1, BoundaryWidth1]];
+        var paddedBounds1 = [[0, 0], [BoundaryHight1, BoundaryWidth1]];
+
+        var image1 = L.imageOverlay(img1.src, bounds1).addTo(map);
+        map.fitBounds(bounds1);
+        map.setMaxBounds(paddedBounds1);
+        map.setView([lat, lng], zoom);
+
+        loadSecondImage();
+        loadThirdImage();
+        loadfifthImage();
+        loadsixthImage()
+    };
+
+    function loadSecondImage() {
+        var img2 = new Image();
+        img2.src = 'Map_drawing_Aprical.png';
+        img2.onload = function () {
+            var factor = 60;
+            var width2 = 2644 / factor;
+            var height2 = 3777 / factor;
+
+            var offsetX = 825;  // X offset in pixels
+            var offsetY = 750;  // Y offset in pixels
+
+                        var bounds2 = [
+                [offsetY, offsetX],
+                [offsetY + height2, offsetX + width2]
+            ];
+
+            // Add the second image overlay to the map
+            var image2 = L.imageOverlay(img2.src, bounds2).addTo(map);
+        };
+    }
+
+    function loadThirdImage() {
+        var img3 = new Image();
+        img3.src = 'Map_Drawing_Schuhturmun2.png';
+        img3.onload = function () {
+            var factor = 1150;
+            var width3 = 2883 / factor;
+            var height3 = 3991 / factor;
+
+            var offsetX = 851.8;  // X offset in pixels
+            var offsetY = 772.5;  // Y offset in pixels
+
+                        var bounds3 = [
+                [offsetY, offsetX],
+                [offsetY + height3, offsetX + width3]
+            ];
+
+            // Add the second image overlay to the map
+            var image3 = L.imageOverlay(img3.src, bounds3).addTo(map);
+        };
+    }
+
+    function loadfifthImage() {
+        var img5 = new Image();
+        img5.src = 'Legende_Aprical.png';
+        img5.onload = function () {
+            var factor = 90;
+            var width5 = 2508 / factor;
+            var height5 = 3446 / factor;
+
+            var offsetX = 796;  // X offset in pixels
+            var offsetY = 774.5;  // Y offset in pixels
+
+                        var bounds5 = [
+                [offsetY, offsetX],
+                [offsetY + height5, offsetX + width5]
+            ];
+
+            // Add the second image overlay to the map
+            var image5 = L.imageOverlay(img5.src, bounds5).addTo(map);
+        };
+    }
+
+    function loadsixthImage() {
+        var img6 = new Image();
+        img6.src = 'Legende_Schuhturmun.png';
+        img6.onload = function () {
+            var factor = 2000;
+            var width6 = 2871 / factor;
+            var height6 = 3889 / factor;
+
+            var offsetX = 854.3;  // X offset in pixels
+            var offsetY = 772.8;  // Y offset in pixels
+
+                        var bounds6 = [
+                [offsetY, offsetX],
+                [offsetY + height6, offsetX + width6]
+            ];
+
+            // Add the second image overlay to the map
+            var image6 = L.imageOverlay(img6.src, bounds6).addTo(map);
+        };
+    }
+</script>
+
+</html>

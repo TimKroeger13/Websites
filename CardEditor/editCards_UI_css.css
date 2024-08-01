@@ -1,0 +1,321 @@
+
+:root {
+  --picturewidth: 1400px;
+  --pictureheight: 2000px;
+}
+
+body {
+    font-family: Cursive;
+    background-color: #B7972C;
+    zoom: 30%;
+    font-size: 100px;
+}
+
+#test{
+    position: absolute; top: 200px; left: 1500px;
+}
+
+#cardpicture{
+    position: absolute; top: 400px; left: 100px;
+    pointer-events: none;
+    width: var(--picturewidth);
+    height: var(--pictureheight);
+}
+
+button {
+    color: black;    
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    background-color: #A08428;
+    border: 8px solid black;
+    font-family: Cursive;
+}
+
+/* Buttons */
+
+#buttonBold{
+    position: absolute; top: 280px; left: 100px;
+    width: 100px;
+    height: 100px;
+    font-size: 60px;
+}
+
+#buttonItalic{
+  position: absolute; top: 280px; left: 220px;
+  width: 100px;
+  height: 100px;
+  font-size: 60px;
+}
+
+#buttonUnderline{
+    position: absolute; top: 280px; left: 340px;
+    width: 100px;
+    height: 100px;
+    font-size: 60px;
+}
+
+#buttonNormal{
+    position: absolute; top: 280px; left:500px;
+    width: 100px;
+    height: 100px;
+    font-size: 60px;
+}
+
+#buttonBack{
+    position: absolute; top: 50px; left:100px;
+    width: 500px;
+    height: 180px;
+    font-size: 120px;
+}
+
+#buttonBackRef{
+    position: absolute; top: 50px; left:650px;
+    width: 400px;
+    height: 120px;
+    font-size: 80px;
+}
+
+/* Delete Field */
+
+#deleteField{
+    position: absolute; top: 280px; left: calc(var(--picturewidth) + 880px);
+    font-size: 50px;
+}
+
+#deleteFieldCheckbox{
+    position: absolute; top: 340px; left: calc(var(--picturewidth) + 810px);
+    width: 50px;
+    height: 50px;
+}
+
+#buttonDeleteField{
+    position: absolute; top: 420px; left: calc(var(--picturewidth) + 810px);
+    width: 400px;
+    height: 180px;
+    font-size: 80px;
+    color: darkgrey;    
+}
+
+/* Field selection */
+
+#objS{
+    position: absolute; top: 420px; left: calc(var(--picturewidth) + 170px);
+    width: 600px;
+    height: 180px;
+    font-size: 80px;
+    background-color: #A08428;
+    font-family: Cursive;
+    text-align: center;
+    border: 8px solid black;
+}
+
+/* Centerd */
+
+#textCenterd{
+    position: absolute; top: 530px; left: calc(var(--picturewidth) + 180px);
+}
+
+#radioCenterNoText{
+    position: absolute; top: 700px; left: calc(var(--picturewidth) + 220px);
+    text-align: center;
+    font-size: 70px;
+}
+
+#radioCenterYesText{
+    position: absolute; top: 700px; left: calc(var(--picturewidth) + 410px);
+    text-align: center;
+    font-size: 70px;
+}
+
+#radioCenterNo{
+    position: absolute; top: 880px; left: calc(var(--picturewidth) + 220px + 35px);
+    font-size: 20px;
+    transform: scale(3);
+}
+
+#radioCenterYes{
+    position: absolute; top: 880px; left: calc(var(--picturewidth) + 410px + 50px);
+    font-size: 20px;
+    transform: scale(3);
+}
+
+/* Coordiantes */
+
+#textCoordinates{
+    position: absolute; top: 850px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textXcor{
+    position: absolute; top: 1100px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textFieldXcor{
+    position: absolute; top: 1100px; left: calc(var(--picturewidth) + 440px);
+    width: 300px;
+    height: 120px;
+    font-size: 90px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+#textYcor{
+    position: absolute; top: 1260px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textFieldYcor{
+    position: absolute; top: 1260px; left: calc(var(--picturewidth) + 440px);
+    width: 300px;
+    height: 120px;
+    font-size: 90px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+/* FontSize */
+
+#fontSize{
+    position: absolute; top: 1500px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textFieldFontSize{
+    position: absolute; top: 1500px; left: calc(var(--picturewidth) + 600px);
+    width: 340px;
+    height: 120px;
+    font-size: 90px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+/* Font */
+
+#font{
+    position: absolute; top: 1680px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textFieldFont{
+    position: absolute; top: 1680px; left: calc(var(--picturewidth) + 420px);
+    width: 540px;
+    height: 180px;
+    font-size: 80px;
+    background-color: #A08428;
+    font-family: Cursive;
+    text-align: center;
+    border: 8px solid black;
+}
+
+/* PositionId */
+
+#positionId{
+    position: absolute; top: 1950px; left: calc(var(--picturewidth) + 180px);
+}
+
+#textFieldpositionId{
+    position: absolute; top: 2100px; left: calc(var(--picturewidth) + 180px);
+    width: 340px;
+    height: 120px;
+    font-size: 90px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+/* Add TextField */
+
+#buttonAddTextField{
+    position: absolute; top: 420px; left: calc(var(--picturewidth) + 1250px);
+    width: 500px;
+    height: 100px;
+    font-size: 60px;
+}
+
+#addTextField{
+    position: absolute; top: 550px; left: calc(var(--picturewidth) + 1250px);
+    width: 500px;
+    height: 150px;
+    font-size: 80px;
+    background-color: #A08428;
+    font-family: Cursive;
+    text-align: center;
+    border: 8px solid black;
+}
+
+#buttonAddTextFieldSubmit{
+    position: absolute; top: 730px; left: calc(var(--picturewidth) + 1250px);
+    width: 500px;
+    height: 100px;
+    font-size: 60px;
+}
+
+/* Add PictureField */
+
+#buttonAddPictureField{
+    position: absolute; top: 420px; left: calc(var(--picturewidth) + 1790px);
+    width: 1020px;
+    height: 100px;
+    font-size: 60px;
+}
+ 
+#textFieldPicture{
+    position: absolute; top: 550px; left: calc(var(--picturewidth) + 1790px);
+    width: 1000px;
+    height: 140px;
+    font-size: 70px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+#buttonAddPictureSubmit{
+    position: absolute; top: 730px; left: calc(var(--picturewidth) + 1790px);
+    width: 1020px;
+    height: 100px;
+    font-size: 60px;
+}
+
+/* SetDefault */
+
+#textSetDefault{
+    position: absolute; top: 850px; left: calc(var(--picturewidth) + 1250px);
+}
+
+#defaultField{
+    position: absolute; top: 940px; left: calc(var(--picturewidth) + 2300px);
+    font-size: 50px;
+}
+
+#defaultFieldCheckbox{
+    position: absolute; top: 1000px; left: calc(var(--picturewidth) + 2230px);
+    width: 50px;
+    height: 50px;
+}
+
+#textFieldDefault{
+    position: absolute; top: 1100px; left: calc(var(--picturewidth) + 1250px);
+    width: 1000px;
+    height: 140px;
+    font-size: 70px;
+    border: 8px solid black;
+    text-align: center;
+    font-family: Cursive;
+    background-color: #A08428;
+}
+
+#buttonAddDefaultSubmit{
+    position: absolute; top: 1280px; left: calc(var(--picturewidth) + 1250px);
+    width: 1020px;
+    height: 100px;
+    font-size: 60px;
+}
+
+
+

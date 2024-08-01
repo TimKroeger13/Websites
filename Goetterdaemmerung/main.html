@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Goetterdaemmerung Timer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="js.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+    <div class="module">
+        <div id="activeTimer" class="banner">
+            <button id="minusButton" class="buttonCss" onclick="substact10Seconds()" type="button"><</button>
+            <p id="activeTimerlable" class="text">40</p>
+            <button id="plusButton" class="buttonCss" onclick="add10Seconds()" type="button">></button>
+        </div>
+        <div id="clock1" class="banner">
+            <div id="clock1text" class="text">40</div>
+        </div>
+        <div id="clock2" class="banner">
+            <div id="clock2text" class="text">40</div>
+        </div>
+        <div id="clock3" class="banner">
+            <div id="clock3text" class="text">40</div>
+        </div>
+        <div id="clock4" class="banner">
+            <div id="clock4text" class="text">40</div>
+        </div>
+        <div id="startStop">
+            <button id="StartStopButton" onclick="startStop()"></button>
+        </div>
+        <div id="restdiv">
+            <button id="resetButton" class="buttonCss" onclick="rest()">Reset</button>
+        </div>
+        <div id="staggerdiv">
+            <button id="staggerButton" class="buttonCss" onclick="staggerfunc()">0</button>
+        </div>
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+

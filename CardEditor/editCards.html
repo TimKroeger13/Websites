@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Card Editor</title>
+        <link rel="stylesheet" href="editCards_UI_css.css">
+        <link rel="icon" href="https://www.user.tu-berlin.de/timkroeger/TableTop/assats/CEIcon.png">
+        <script src="editCards_UI_JS.js"></script>
+    </head>
+    <body>
+       <input id="cardpicture" type="image" src="C:\Users\Tim\Desktop\PixelTestImage.png"> 
+       
+       <!--Buttons--> 
+       <button id="buttonBackRef" type="button" onclick="buttonRef()">Ref</button>
+       <button id="buttonBack" type="button" onclick="buttonBac5k()">&lt Back</button>
+       <button id="buttonBold" type="button" onclick="buttonBold()">B</button>
+       <button id="buttonItalic" type="button" onclick="buttonItalic()">I</button>
+       <button id="buttonUnderline" type="button" onclick="buttonUnderline()">U</button>
+       <button id="buttonNormal" type="button" onclick="buttonNormalize()">N</button>
+
+       <!--Delete Field  -->
+       <p id = "deleteField">Really?</p>
+       <input type="checkbox" id="deleteFieldCheckbox" onchange="deleteCheckBoxChange()">
+       <button id="buttonDeleteField" type="button" disabled onclick="ClickbuttonDeleteField()">Delete</button>
+
+       <!--Field selection--> 
+       <select name="objectSelection" id="objS" onchange = "objSChange()">
+         <option value="textField">Textfile1</option>
+         <option value="textField">Textfile2</option>
+         <option value="textField">Textfile3</option>
+         <option value="picture">Picture1</option>
+         <option value="picture">Picture2</option>
+       </select> 
+
+       <!--Center Button--> 
+       <p id = "textCenterd"><u>Centerd:</u></p>
+
+       <p id="radioCenterNoText">No</p>
+       <p id="radioCenterYesText">Yes</p>
+       <input id="radioCenterNo" type="radio" name="centerRadio" value="false" checked="checked" onchange = "centerChange()">
+       <input id="radioCenterYes" type="radio" name="centerRadio" value="true" onchange = "centerChange()">
+
+       <!--Coordiantes--> 
+       <p id = "textCoordinates"><u>Coordinates:</u></p>
+
+       <label id="textXcor" for="textFieldXcor">Xcor</label>
+       <input type="number" id="textFieldXcor" onchange = "XcorChange()" value=0>
+
+       <label id="textYcor" for="textFieldYcor">Ycor</label>
+       <input type="number" id="textFieldYcor" onchange = "YcorChange()" value=0>
+
+        <!--FontSize--> 
+        <label id="fontSize" for="textFieldFontSize" onchange = "fontSizeChange()">Fontsize</label>
+        <input type="number" id="textFieldFontSize" value=10>
+
+        <!--Font--> 
+        <label id="font" for="textFieldFont">Font</label>
+        <select name="objectSelection" id="textFieldFont" onchange = "fontChange()">
+            <option value="arial">Areal</option>
+            <option value="segeoPrint">Segeo Print</option>
+        </select> 
+
+        <!--PositionID-->
+        <label id="positionId" for="textFieldPositionID"><u>PositionID:</u></label>
+        <input type="number" id="textFieldpositionId" value=0>
+        
+        <!--Add TextField-->
+        <button id="buttonAddTextField" type="button" onclick="buttonAddTextField()">Add Textfield</button>
+
+        <select name="objectSelection" id="addTextField" onchange = "addTextField()">
+        <option value="textField">Textfile3</option>
+        <option value="textField">Textfile4</option>
+        <option value="picture">Picture3</option>
+        <option value="picture">Picture4</option>
+        </select> 
+
+        <button id="buttonAddTextFieldSubmit" type="button" onclick="buttonTextFieldSubmit()">Add</button>
+
+        <!--Add PictureField-->
+        <button id="buttonAddPictureField" type="button" onclick="buttonAddPictureField()">Add Picture</button>
+        <input type="text" id="textFieldPicture" onchange = "textFieldPictureChange()">
+        <button id="buttonAddPictureSubmit" type="button" onclick="buttonPictureSubmit()">Add</button>
+        
+        <!--Set Card as default-->
+        <p id = "textSetDefault"><u>Set card as default:</u></p>
+        <p id = "defaultField">Sure?</p>
+        <input type="checkbox" id="defaultFieldCheckbox" onchange="defaultCheckBoxChange()">
+        <input type="text" id="textFieldDefault" onchange = "textFieldDefault()">
+        <button id="buttonAddDefaultSubmit" type="button" onclick="buttonDefaultSubmit()">Add</button>
+
+    </body>
+</html>
