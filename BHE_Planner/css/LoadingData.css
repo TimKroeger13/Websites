@@ -1,0 +1,54 @@
+.ImportButton, .ExportButton{
+    height: 5vh;
+    margin: 0.5vw;
+    align-self: center;
+    font-size: larger;
+    background-color: #F2F2F2;
+}
+
+.ExportButton:hover, .ImportButton:hover {
+    /*box-shadow: 0 0 10px #FF6A00;*/
+    background-color: #A0A0A0; 
+    color: white;
+}
+
+.modal {
+    position: absolute; /* Make sure it's positioned relative to the containing block */
+    top: 60px; /* Adjust the position as needed to fit below the buttons */
+    left: 0;
+    width: 100%; /* Adjust width as needed */
+    background-color: white; /* Make sure the background is white for visibility */
+    padding: 0; /* Add some padding */
+    border: 1px solid #ccc; /* Optional: Add a border to distinguish it */
+    z-index: 1000; /* Make sure it's above other elements */
+    display: none; /* Initially hide the modal */
+}
+
+.sliderLabel {
+    margin-left: 10px;
+    color: white;
+    font-size: larger;
+    margin-right: 5px;
+}
+
+.numberSlider {
+    display: flex;
+    align-items: center; /* Vertically center the text */
+    width: 150px;
+    margin-right: 10px; /* Space between slider and value */
+    vertical-align: middle;
+}
+
+.sliderValue {
+    color: white;
+    font-size: larger;
+}
+
+.CurrentBufferInt {
+    color: white;
+    font-size: larger;
+}
+
+#Snapping{
+    margin-left: 5vw;
+}

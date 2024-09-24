@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>BHE planner</title>
+  <meta charset="UTF-8">
+
+
+  <!--Extern refeerences-->
+  <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+     <script src="https://d3js.org/d3.v7.min.js"></script>
+  
+  <!--StyleSheets-->
+  <link rel="stylesheet" href="css/Structure.css">
+  <link rel="stylesheet" href="css/LoadingData.css">
+
+  <!--Javascript-->
+  <script src="Map/Map.js"></script>
+  <script src="StartUp.Js"></script>
+  <script src="LoadData/dataStorage.js"></script>
+  <script src="LoadData/LoadGeoJson.js"></script>
+  <script src="geometry/OnMapClick.js"></script>
+  <script src="geometry/BHEPlacement.js"></script>
+  <script src="geometry/ExportGeoJSON.js"></script>
+
+</head>
+<body>
+
+<div class = "LoadData">
+
+  <input type="file" id="fileInput" style="display: none;" accept=".geojson">
+  
+  <button onclick="loadBackroundGeometry()" type="button" class="ImportButton">Load Backround</button>
+  <!-- <button onclick="loadBHE()" type="button" class = "ImportButton">Load BHE</button>-->
+  <button onclick="exportBHE()" type="button" class="ExportButton">Export BHE</button>
+
+  <label for="numberSlider" class="sliderLabel">Spacing (meter):</label>
+  <input type="range" id="numberSlider" min="6" max="20" value="6" class="numberSlider">
+  <span id="sliderValue", class="CurrentBufferInt">6</span>
+
+  <input type="checkbox" id="Snapping" name="snap" value="bool">
+
+</div>
+
+<div class="modal" id="modalId">
+  <!-- Modal content will be dynamically added here -->
+</div>
+
+<div class="DisplayData" id="map"></div>
+
+
+<script>
+
+//Slider
+const slider = document.getElementById('numberSlider');
+const sliderValue = document.getElementById('sliderValue');
+
+slider.addEventListener('input', async function() {
+    sliderValue.textContent = slider.value;
+    
+    await ReDrawBuffer();
+});
+
+
+</script>
+
+
+
+</body>
