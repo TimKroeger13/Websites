@@ -1,9 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "line",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
-"features": [
-{ "type": "Feature", "properties": { "id": null }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 13.609888279426631, 52.60032516739254 ], [ 13.609820068137115, 52.600326647020438 ], [ 13.609756729082564, 52.600230471103401 ], [ 13.609856609899353, 52.600010005512175 ], [ 13.609782308316133, 52.599944901366996 ], [ 13.60968242749934, 52.599598664060188 ] ] ] } },
-{ "type": "Feature", "properties": { "id": null }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 13.609782308316133, 52.599944901366996 ], [ 13.609939437893768, 52.599606062321868 ] ] ] } }
-]
-}
