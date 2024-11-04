@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "easyHouse2",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": null, "value": 80000.0 }, "geometry": { "type": "Point", "coordinates": [ 13.388896163563528, 52.510426601193579 ] } },
+{ "type": "Feature", "properties": { "id": 1, "value": 20000.0 }, "geometry": { "type": "Point", "coordinates": [ 13.388316433497991, 52.511307640050227 ] } },
+{ "type": "Feature", "properties": { "id": 2, "value": 100000.0 }, "geometry": { "type": "Point", "coordinates": [ 13.389711350582239, 52.511185641407778 ] } }
+]
+}
