@@ -1,0 +1,35 @@
+const locationsGeoJSON = {
+    "type": "FeatureCollection",
+    "name": "Locations",
+    "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+    "features": [
+    { "type": "Feature", "properties": { "name": "Großmutter Haus" }, "geometry": { "type": "Point", "coordinates": [ -70.07712360839956, 19.645229507873328 ] } },
+    { "type": "Feature", "properties": { "name": "National Park" }, "geometry": { "type": "Point", "coordinates": [ -69.60833231107803, 19.012393420976295 ] } },
+    { "type": "Feature", "properties": { "name": "Ankunft" }, "geometry": { "type": "Point", "coordinates": [ -70.569052148607113, 19.757490121256499 ] } },
+    { "type": "Feature", "properties": { "name": "NRF" }, "geometry": { "type": "Point", "coordinates": [ -70.691239159375527, 19.458437395475311 ] } },
+    { "type": "Feature", "properties": { "name": "NRF" }, "geometry": { "type": "Point", "coordinates": [ -70.639288709488127, 19.120319353346215 ] } },
+    { "type": "Feature", "properties": { "name": "Columbus Park" }, "geometry": { "type": "Point", "coordinates": [ -69.883969570925402, 18.473522462333538 ] } },
+    { "type": "Feature", "properties": { "name": "NRF" }, "geometry": { "type": "Point", "coordinates": [ -69.30968712526176, 18.466521139914775 ] } },
+    { "type": "Feature", "properties": { "name": "Cueava de las Matrtavillas" }, "geometry": { "type": "Point", "coordinates": [ -69.160008037070497, 18.452166209699413 ] } },
+    { "type": "Feature", "properties": { "name": "NRF" }, "geometry": { "type": "Point", "coordinates": [ -69.388699761201195, 19.054657804294052 ] } },
+    { "type": "Feature", "properties": { "name": "Wale" }, "geometry": { "type": "Point", "coordinates": [ -69.337923648717165, 19.11532629165055 ] } },
+    { "type": "Feature", "properties": { "name": "Cooler Strand?" }, "geometry": { "type": "Point", "coordinates": [ -69.465520999664989, 19.079591120416364 ] } },
+    { "type": "Feature", "properties": { "name": "NRF" }, "geometry": { "type": "Point", "coordinates": [ -70.410806688465584, 19.746687679588121 ] } },
+    { "type": "Feature", "properties": { "name": "Burg Suchen" }, "geometry": null },
+    { "type": "Feature", "properties": { "name": "Isabel de Torres National Park\n" }, "geometry": { "type": "Point", "coordinates": [ -70.705303084037908, 19.765591835558823 ] } },
+    { "type": "Feature", "properties": { "name": "Burg" }, "geometry": { "type": "Point", "coordinates": [ -70.694623834568219, 19.803245344724431 ] } },
+    { "type": "Feature", "properties": { "name": "Cooler Baum" }, "geometry": { "type": "Point", "coordinates": [ -70.622866879894715, 19.451121870840549 ] } },
+    { "type": "Feature", "properties": { "name": "Mutter Haus" }, "geometry": { "type": "Point", "coordinates": [ -70.076661891382358, 19.644742411415859 ] } },
+    { "type": "Feature", "properties": { "name": "Bonny Adresse????" }, "geometry": { "type": "Point", "coordinates": [ -69.848980946607, 18.520539384080415 ] } },
+    { "type": "Feature", "properties": { "name": "Botanischer Garten" }, "geometry": { "type": "Point", "coordinates": [ -69.954408393723426, 18.493549638317671 ] } },
+    { "type": "Feature", "properties": { "name": "Macorix House of Rum" }, "geometry": { "type": "Point", "coordinates": [ -70.699319761713497, 19.794746105500394 ] } },
+    { "type": "Feature", "properties": { "name": "Larimar Museums" }, "geometry": { "type": "Point", "coordinates": [ -69.883397310855983, 18.472470146324188 ] } },
+    { "type": "Feature", "properties": { "name": "Lago Los Trees Ojos" }, "geometry": { "type": "Point", "coordinates": [ -69.842578709984608, 18.480798371965999 ] } },
+    { "type": "Feature", "properties": { "name": "Bayaguana" }, "geometry": null },
+    { "type": "Feature", "properties": { "name": "Bonao\n" }, "geometry": { "type": "Point", "coordinates": [ -70.397768899397065, 18.928429290310252 ] } },
+    { "type": "Feature", "properties": { "name": "Salto de Jima" }, "geometry": { "type": "Point", "coordinates": [ -70.451700539657097, 18.99671916603554 ] } },
+    { "type": "Feature", "properties": { "name": "Monte Plata" }, "geometry": { "type": "Point", "coordinates": [ -69.784380274299394, 18.808433176503378 ] } },
+    { "type": "Feature", "properties": { "name": "Salto De Socoa" }, "geometry": { "type": "Point", "coordinates": [ -69.722454523070297, 18.879285667849125 ] } }
+    ]
+    };
+  

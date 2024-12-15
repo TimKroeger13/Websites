@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fullscreen Leaflet Map</title>
+    <!-- Link to Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Ensure the map takes up the full screen */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Link to Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Link to your external JavaScript file containing the GeoJSON -->
+    <script src="locations.js"></script>
+    <script src="lines.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([19, -70], 9); // Set view to the first location in geojson
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Add GeoJSON data to the map
+        L.geoJSON(locationsGeoJSON, {
+            pointToLayer: function (feature, latlng) {
+                // Create a marker with a label for the name property
+                const marker = L.marker(latlng);
+                if (feature.properties && feature.properties.name) {
+                    marker.bindTooltip(feature.properties.name, { permanent: true, direction: 'top' });
+                }
+                return marker;
+            }
+        }).addTo(map);
+
+        L.geoJSON(linesGeoJSON, {
+            style: function (feature) {
+                return { color: "#ff7800", weight: 5, opacity: 0.65 };
+            }
+        }).addTo(map);
+    </script>
+</body>
+</html>
