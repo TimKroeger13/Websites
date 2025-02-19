@@ -99,20 +99,30 @@
 
         // Add GeoJSON data to the map
         L.geoJSON(locationsGeoJSON, {
-            pointToLayer: function (feature, latlng) {
-                // Create a marker with a custom icon for each location
-                const marker = L.marker(latlng, { icon: eventIcon });
+    pointToLayer: function (feature, latlng) {
+        // Create a marker with a custom icon for each location
+        const marker = L.marker(latlng, { icon: eventIcon });
 
-                if (feature.properties && feature.properties.name) {
-                    marker.bindTooltip(feature.properties.name, {
-                        permanent: true,
-                        direction: 'top',
-                        offset: [0, -10] // Adjust this value to move the tooltip higher or lower
-                    });
-                }
-                return marker;
-            }
-        }).addTo(map);
+        // Always show the name as a permanent tooltip
+        if (feature.properties && feature.properties.name) {
+            marker.bindTooltip(feature.properties.name, {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -10] // Adjust this value to move the tooltip higher or lower
+            });
+        }
+
+        // If there's a URL, open it when clicked
+        if (feature.properties.url) {
+            marker.on("click", function () {
+                window.open(feature.properties.url, "_blank");
+            });
+        }
+
+        return marker;
+    }
+}).addTo(map);
+
 
         L.geoJSON(house, {
             pointToLayer: function (feature, latlng) {
