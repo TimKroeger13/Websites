@@ -4,21 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Leaflet Map</title>
-    <!-- Link to Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Domrep Map 2025</title>
+    <link rel="stylesheet" href="leaflet/leaflet.css">
     <style>
-        /* Ensure the map takes up the full screen */
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
+        html, body { height: 100%; margin: 0; }
+        #map { width: 100%; height: 100%; }
     </style>
 </head>
 
@@ -161,52 +151,6 @@
             }
         }).addTo(map);
 
-        let liveLocationMarker = null;
-        let initialCoords = null;
-
-        // Function to request geolocation once and track the live location
-        function trackLiveLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-
-                    // Get the initial coordinates of the user
-                    initialCoords = [position.coords.latitude, position.coords.longitude];
-                    // Set map view to current location
-
-                    // Add initial live location marker
-                    liveLocationMarker = L.marker(initialCoords).addTo(map);
-
-                    // Manually track the position every 10 seconds by updating the marker position
-                    setInterval(function() {
-                        // Here we simulate the movement by updating the coordinates manually (for demo purposes).
-                        // You can replace this with your real location updates if available.
-                        // For this example, let's simulate small movements.
-                        if (liveLocationMarker) {
-                            // Simulate movement: we add a small random offset to latitude and longitude
-                            const offsetLat = (Math.random() - 0.5) * 0.0001; // Random change between -0.00005 and 0.00005
-                            const offsetLng = (Math.random() - 0.5) * 0.0001; // Random change between -0.00005 and 0.00005
-
-                            // Update the marker position
-                            const newCoords = [initialCoords[0] + offsetLat, initialCoords[1] + offsetLng];
-                            liveLocationMarker.setLatLng(newCoords);
-                            initialCoords = newCoords; // Update initialCoords to the new position
-
-                            console.log("Updated Location:", newCoords);
-                        }
-                    }, 10000); // Update every 10 seconds
-                }, function(error) {
-                    console.log("Geolocation error: ", error);
-                    alert("Unable to retrieve your location.");
-                });
-            } else {
-                console.log("Geolocation is not supported by this browser.");
-            }
-        }
-
-        // Call the function when the page is loaded
-        window.onload = function () {
-            trackLiveLocation(); // Request location tracking when the page is loaded
-        };
     </script>
 
 </body>
