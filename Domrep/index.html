@@ -35,7 +35,7 @@
         // Initialize the map
         const map = L.map('map').setView([19, -70], 9); // Set view to the first location in geojson
 
-        /*
+        
 
        const tilesZero = L.tileLayer('tiles0/{z}/{x}/{y}.png', {
            minZoom: 1,
@@ -52,18 +52,34 @@
            attribution: '&copy; OpenStreetMap contributors'
        });
 
-       const tileLayers = L.layerGroup([tilesZero, tilesFourteen]);
+       const PankowTestArea = L.tileLayer('PankowTestArea/{z}/{x}/{y}.png', {
+           minZoom: 1,
+           maxZoom: 19,       // Max zoom allowed in the map
+           maxNativeZoom: 16, // These tiles only go up to zoom level 12
+           attribution: '&copy; OpenStreetMap contributors'
+       });
+
+       const tilesSixteen = L.tileLayer('tiles16/{z}/{x}/{y}.png', {
+           minZoom: 1,
+           maxZoom: 19,       // Max zoom allowed in the map
+           maxNativeZoom: 16, // These tiles only go up to zoom level 12
+           attribution: '&copy; OpenStreetMap contributors'
+       });
+
+       const tileLayers = L.layerGroup([tilesZero, tilesFourteen,PankowTestArea,tilesSixteen]);
        tileLayers.addTo(map);
 
-       */
+       
 
 
+       /*
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             maxNativeZoom: 15,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        */
 
 
         const eventIcon = L.icon({
