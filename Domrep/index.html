@@ -136,6 +136,13 @@
                         offset: [0, -30] // Adjust this value to move the tooltip higher or lower
                     });
                 }
+
+                if (feature.properties.url) {
+                    marker.on("click", function () {
+                        window.open(feature.properties.url, "_blank");
+                    });
+                }
+
                 return marker;
             }
         }).addTo(map);
