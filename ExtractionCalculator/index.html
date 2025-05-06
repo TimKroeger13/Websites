@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>ExtractionCalculator</title>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="js.js"></script>
+  <script src="VDI_values.js"></script>
+  <script src="InputConstrains.js"></script>
+
+
+</head>
+
+<body>
+
+  <span class="Headder">Sondenfeld Entzug</span>
+
+<div class=inputParameter>
+
+  <div class="InputGroup">
+    <span class="InputLabel">Minimale Rücklauftemperatur: </span>
+    <input id="RLInput" class="NumberInputField" type="number" min="-5" max="0" step="0.1" value="-2.8"
+      title="-5 bis 0">
+  </div>
+
+  <div class="InputGroup">
+    <span class="InputLabel">Wärmeleitfähigkeit: </span>
+    <input id="ConductivityInput" class="NumberInputField" type="number" min="1" max="4" step="0.1" value="2.8"
+      title="1 bis 2">
+  </div>
+
+  <div class="InputGroup">
+    <span class="InputLabel">EWS Anzahl: </span>
+    <input id="EWSAmountInput" class="NumberInputField" type="number" min="1" step="1" value="23" title=">0">
+  </div>
+
+  <div class="InputGroup">
+    <span class="InputLabel">Ungestörte Grundwasser Temperatur: </span>
+    <input id="GroudWaterTempInput" class="NumberInputField" type="number" min="0" max="100" step="0.1" value="12" title="0 bis 100">
+  </div>
+
+  <!--Checkboxes-->
+
+  <div class="InputGroup">
+    <span class="InputLabel">Flow Type: </span>
+    <label class="ToggleSwitch">
+      <input type="checkbox" id="toggleFlow">
+      <span class="Slider"></span>
+    </label>
+    <span id="FlowValue" class="IndicatorString">Laminar</span>
+  </div>
+
+
+  <div class="InputGroup">
+    <span class="InputLabel">Thermobeton vorhanden: </span>
+    <label class="ToggleSwitch">
+      <input type="checkbox" id="toggleConcrete">
+      <span class="Slider"></span>
+    </label>
+    <span id="GroutConducValue" class="IndicatorString">0.8 W/M</span>
+  </div>
+
+  <p></p>
+
+  <div class="CalcualteGroup">
+    <button type="button" class="buttonClas" onclick="calculateExtraction()">Calcualte</button>
+  </div>
+
+  <p></p>
+
+  <div class="OutputGroup">
+    <span class="OutputLabel">Enzug in W/m:</span>
+    <span class="OutputResult" id="OutputResultID">0</span>
+  </div>
+</div>
+
+
+<script>
+
+    //Conductivity Input
+    const RLInput = document.getElementById("RLInput");
+    RLInput.addEventListener("input", () => {
+      let val = parseFloat(RLInput.value);
+
+      if (isNaN(val)) return;
+      if (val < -5) RLInput.value = -5;
+      if (val > 0) RLInput.value = 0;
+
+      calculateExtraction();
+    });
+
+  //Conductivity Input
+  const ConductivityInput = document.getElementById("ConductivityInput");
+  ConductivityInput.addEventListener("input", () => {
+    let val = parseFloat(ConductivityInput.value);
+
+    if (isNaN(val)) return;
+    if (val < 1) ConductivityInput.value = 1;
+    if (val > 4) ConductivityInput.value = 4;
+
+    calculateExtraction();
+  });
+
+    //Ground Water temperatur 
+  const GroudWaterTempInput = document.getElementById("GroudWaterTempInput");
+  GroudWaterTempInput.addEventListener("input", () => {
+    let val = parseFloat(GroudWaterTempInput.value);
+
+    if (isNaN(val)) return;
+    if (val < 0) GroudWaterTempInput.value = 0;
+    if (val > 100) GroudWaterTempInput.value = 100;
+
+    calculateExtraction();
+  });
+
+  //EAS amount Input
+  const EWSAmountInput = document.getElementById("EWSAmountInput");
+  EWSAmountInput.addEventListener("input", () => {
+    let val = parseFloat(EWSAmountInput.value);
+
+    if (isNaN(val)) return;
+    if (val < 1) EWSAmountInput.value = 1;
+
+    calculateExtraction();
+  });
+
+  //FlowType
+  const toggleFlow = document.getElementById("toggleFlow");
+  const FlowValue = document.getElementById("FlowValue");
+  toggleFlow.addEventListener("input", () => {
+    
+    if(toggleFlow.checked){
+      FlowValue.innerHTML = "Turbolent";
+    }else{
+      FlowValue.innerHTML = "Laminar"; 
+    }
+
+    calculateExtraction();
+    
+  });
+
+  const toggleConcrete = document.getElementById("toggleConcrete");
+  const GroutConducValue = document.getElementById("GroutConducValue");
+  toggleConcrete.addEventListener("input", () => {
+    if(toggleConcrete.checked){
+      GroutConducValue.innerHTML = "2.0 W/M";
+    }else{
+      GroutConducValue.innerHTML = "0.8 W/M"; 
+    }
+
+    calculateExtraction();
+
+  });
+
+  calculateExtraction();
+
+
+</script>
+
+</body>
