@@ -54,6 +54,8 @@
     padding: 0;
     font-family: 'Segoe UI', 'Inter', sans-serif;
     width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     height: auto;
     overflow-x: hidden; /* Allow vertical scroll, block horizontal */
   }
@@ -64,9 +66,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2vh 5vw;
     gap: 5vh;
     min-height: 100vh; /* Better than fixed 100vh */
+    width: 100vw;
   }
   
   /* Big clean headline */
@@ -76,14 +78,17 @@
     text-align: center;
     color: #ffffff;
     letter-spacing: 0.05em;
+    display: block;
+    margin: 0 auto;
   }
-  
+
   /* Form area */
   .inputParameter {
     display: grid;
     gap: 2vh;
     width: 85vw;
     max-width: 1000px;
+    margin-top: 2vh;
   }
   
   /* Input rows */
@@ -113,6 +118,7 @@
     border-radius: 0.8vh;
     background-color: #2e2e2e;
     color: #ffffff;
+    max-height: 7vh;
   }
   
   /* Toggle switches */
@@ -207,4 +213,110 @@
     color: #ffffff;
   }
   
-  
+  .FixedValueField {
+    flex: 0 1 30vw; /* Same flex rule as input */
+    max-width: 400px;
+    padding: 1.2vh 1vw;
+    font-size: 2.5vh;
+    border: 1px solid #666;
+    border-radius: 0.8vh;
+    background-color: #515151;
+    color: #ffffff;
+    display: flex;
+    align-items: center; /* Center text vertically */
+    min-height: 3.8vh; /* Matches the visual height of input fields */
+    max-height: 5vh;
+}
+
+.ScaleContainer {
+  transform-origin: top center;
+  transition: transform 0.3s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1100px) and (min-width: 800px) {
+  .ScaleContainer {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-width: 800px) and (min-width: 600px) {
+  .ScaleContainer {
+    transform: scale(0.8);
+  }
+}
+
+@media (max-width: 600px) {
+  .ScaleContainer {
+    transform: none; /* Use mobile layout */
+  }
+}
+
+.ParameterSection {
+  margin-bottom: 4vh;
+}
+
+.SectionHeader {
+  font-size: 4vh;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 2vh;
+  text-align: center;
+  margin-top: 2vh;
+}
+
+.ParameterGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vh 2vw;
+}
+
+@media (max-width: 600px) {
+  .ParameterGrid {
+    grid-template-columns: 1fr; /* Switch to single column on small screens */
+  }
+}
+
+@media (max-width: 1600px) {
+  .ParameterGrid {
+    grid-template-columns: 1fr; /* Break grid earlier */
+  }
+
+  .InputGroup {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .InputLabel,
+  .IndicatorString {
+    font-size: 1.8vh;
+    text-align: left;
+    width: 100%;
+  }
+
+  .NumberInputField, .FixedValueField {
+    width: 100%;
+    max-width: none;
+    font-size: 1.8vh;
+  }
+
+  .ToggleSwitch {
+    width: 50px;
+    height: 24px;
+  }
+
+  .Slider:before {
+    height: 18px;
+    width: 18px;
+  }
+
+  .OutputResult {
+    font-size: 4vh;
+  }
+
+  .buttonClas {
+    font-size: 1.8vh;
+  }
+}

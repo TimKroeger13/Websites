@@ -12,10 +12,18 @@ const w_Mapping = {
     '5': 'w5',
 };
 
-
 async function GetSpecificHeatExtractionValue(n,w,rl){
 
+    const regenMode = document.getElementById('regenSelect').value;
+
+    if (regenMode === 'full') {
+        n = 1;
+    }
+
     var CollectedDataToBoreholeNumber = await collectHeatExtracion(n)
+    var CollectedDataToBoreholeNumber_50Reg = await collectHeatExtracion50ProzentRegen(n)
+
+    //Get Regeneration Value
 
     //////////////////// interpolate ///////////////////////
 
@@ -53,11 +61,7 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
 
     //check: w_weitgh_upper * w_nearestBounds.upper + w_weigth_lower * w_nearestBounds.lower
 
-    
-    
-
-
-
+    if (regenMode === 'none' || regenMode === 'full') {
     //lower RL calculation
     var Low_Rl_Lower_W = CollectedDataToBoreholeNumber[rl_key_lower][w_key_lower];
     var Low_Rl_Upper_W = CollectedDataToBoreholeNumber[rl_key_lower][w_key_upper];
@@ -67,6 +71,19 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
     //Upper RL calculation
     var Upper_Rl_Lower_W = CollectedDataToBoreholeNumber[rl_key_upper][w_key_lower];
     var Upper_Rl_Upper_W = CollectedDataToBoreholeNumber[rl_key_upper][w_key_upper];
+    }
+    if (regenMode === 'half') {
+    //lower RL calculation
+    var Low_Rl_Lower_W = CollectedDataToBoreholeNumber_50Reg[rl_key_lower][w_key_lower];
+    var Low_Rl_Upper_W = CollectedDataToBoreholeNumber_50Reg[rl_key_lower][w_key_upper];
+
+    var Low_Rl_total_W =  w_weigth_lower*Low_Rl_Lower_W + w_weitgh_upper*Low_Rl_Upper_W
+
+    //Upper RL calculation
+    var Upper_Rl_Lower_W = CollectedDataToBoreholeNumber_50Reg[rl_key_upper][w_key_lower];
+    var Upper_Rl_Upper_W = CollectedDataToBoreholeNumber_50Reg[rl_key_upper][w_key_upper];
+    }
+
 
     var Upper_Rl_total_W =  w_weigth_lower*Upper_Rl_Lower_W + w_weitgh_upper*Upper_Rl_Upper_W
 
@@ -74,7 +91,33 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
 
     var total_r = rl_weigth_lower * Low_Rl_total_W+ rl_weitgh_upper * Upper_Rl_total_W;
 
-    return total_r;
+    
+
+
+
+    const flwonMode = document.getElementById('FlowType').value;
+
+    var FlowrateAdjust;
+    if (flwonMode === 'laminar') {
+        FlowrateAdjust = flowrate(w)
+    }
+    if (flwonMode === 'turbolent') {
+        FlowrateAdjust = 1;
+    }
+
+    const GroutMode = document.getElementById('GroutConducValue').value;
+
+    var Groutdjust;
+    if (GroutMode === 'thermo') {
+        Groutdjust = 1.1;
+    }
+    if (GroutMode === 'none') {
+        Groutdjust = 1;
+    }
+
+    var TotalAdjust = FlowrateAdjust;
+
+    return total_r * TotalAdjust * Groutdjust;
 
 }
 
@@ -100,101 +143,33 @@ async function collectHeatExtracion(n){
 
     if(n<=5){
         return {
-            M0RL: All_VDIValues_For_M0RL_2400(n),
+            //M0RL: All_VDIValues_For_M0RL_2400(n),
             M3RL: All_VDIValues_For_M3RL_2400(n),
-            M5RL: All_VDIValues_For_M5RL_2400(n)
+            //M5RL: All_VDIValues_For_M5RL_2400(n)
           };
 
     }else{
         return {
-            M0RL: All_VDIFunctions_For_M0RL_2400(n),
+            //M0RL: All_VDIFunctions_For_M0RL_2400(n),
             M3RL: All_VDIFunctions_For_M3RL_2400(n),
-            M5RL: All_VDIFunctions_For_M5RL_2400(n)
+            //M5RL: All_VDIFunctions_For_M5RL_2400(n)
           };
     }
-
 }
 
+async function collectHeatExtracion50ProzentRegen(n){
 
-///////////////////////////////////////////////////////////////////////////
-/////////////////////////// -0 RL BLOCK ///////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
-function All_VDIValues_For_M0RL_2400(n){
     return {
-        w1: VDIVALUE_2400ha_M0RL_1WM(n),
-        w2: VDIVALUE_2400ha_M0RL_2WM(n),
-        w3: VDIVALUE_2400ha_M0RL_3WM(n),
-        w4: VDIVALUE_2400ha_M0RL_4WM(n)
-      };
+        //M0RL: All_VDIFunctions_For_M0RL_2400(n),
+        M3RL: All_VDIFunctions_For_M3RL_2400_50reg(n),
+        //M5RL: All_VDIFunctions_For_M5RL_2400(n)
+    };
+
+
 }
 
-function All_VDIFunctions_For_M0RL_2400(n){
-    return {
-        w1: VDIVALUE_2400ha_M0RL_1WM_function(n),
-        w2: VDIVALUE_2400ha_M0RL_2WM_function(n),
-        w3: VDIVALUE_2400ha_M0RL_3WM_function(n),
-        w4: VDIVALUE_2400ha_M0RL_4WM_function(n)
-      };
-}
 
-//-3 RL Values
 
-function VDIVALUE_2400ha_M0RL_1WM(n) {
-
-    if(n == 1){return(15.9);}
-    if(n == 2){return(13.9);}
-    if(n == 3){return(12.3);}
-    if(n == 4){return(11.4);}
-    if(n == 5){return(10.9);}
-
-    return -999;
-}
-function VDIVALUE_2400ha_M0RL_1WM_function(n) {
-    return (-3.1994 * Math.log(n) + 15.9434)
-}
-
-function VDIVALUE_2400ha_M0RL_2WM(n) {
-
-    if(n == 1){return(24.7);}
-    if(n == 2){return(22.1);}
-    if(n == 3){return(19.9);}
-    if(n == 4){return(18.9);}
-    if(n == 5){return(18.2);}
-
-    return -999;
-}
-function VDIVALUE_2400ha_M0RL_2WM_function(n) {
-    return (-4.1564 * Math.log(n) + 24.7398)
-}
-
-function VDIVALUE_2400ha_M0RL_3WM(n) {
-
-    if(n == 1){return(31.1);}
-    if(n == 2){return(28.1);}
-    if(n == 3){return(25.8);}
-    if(n == 4){return(24.5);}
-    if(n == 5){return(23.7);}
-
-    return -999;
-}
-function VDIVALUE_2400ha_M0RL_3WM_function(n) {
-    return (-4.7102 * Math.log(n) + 31.1500)
-}
-
-function VDIVALUE_2400ha_M0RL_4WM(n) {
-
-    if(n == 1){return(36.0);}
-    if(n == 2){return(33.0);}
-    if(n == 3){return(30.6);}
-    if(n == 4){return(29.2);}
-    if(n == 5){return(28.3);}
-
-    return -999;
-}
-function VDIVALUE_2400ha_M0RL_4WM_function(n) {
-    return (-4.8931 * Math.log(n) + 36.1051)
-}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -232,7 +207,7 @@ function VDIVALUE_2400ha_M3RL_1WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M3RL_1WM_function(n) {
-    return (-3.7103 * Math.log(n) + 21.0126)
+    return (21.9225 / Math.pow((parseInt(n) + 1.0589), 0.3706) + 4.1915)
 }
 
 function VDIVALUE_2400ha_M3RL_2WM(n) {
@@ -246,7 +221,7 @@ function VDIVALUE_2400ha_M3RL_2WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M3RL_2WM_function(n) {
-    return (-5.22 * Math.log(n) + 32.878)
+    return (40.5743 / Math.pow((parseInt(n) + 1.6282), 0.3723) + 4.3738)
 }
 
 function VDIVALUE_2400ha_M3RL_3WM(n) {
@@ -260,7 +235,7 @@ function VDIVALUE_2400ha_M3RL_3WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M3RL_3WM_function(n) {
-    return (-5.78 * Math.log(n) + 41.454)
+    return (64.4596 / Math.pow((parseInt(n) + 3.0587), 0.4543) + 6.9836)
 }
 
 function VDIVALUE_2400ha_M3RL_4WM(n) {
@@ -274,7 +249,165 @@ function VDIVALUE_2400ha_M3RL_4WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M3RL_4WM_function(n) {
-    return (-5.941 * Math.log(n) + 48.049)
+    return (80.4383 / Math.pow((parseInt(n) + 3.7651), 0.4573) + 8.2964)
+}
+
+
+function flowrate (w){
+    return(0.005 * Math.pow(parseFloat(w), 2) - 0.045 * parseFloat(w) + 0.89)
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////
+////////////////////// -3 RL BLOCK 50% Regen //////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+function All_VDIFunctions_For_M3RL_2400_50reg(n){
+    return {
+        w1: VDIVALUE_2400ha_M3RL_1WM_function_50reg(n),
+        w2: VDIVALUE_2400ha_M3RL_2WM_function_50reg(n),
+        w3: VDIVALUE_2400ha_M3RL_3WM_function_50reg(n),
+        w4: VDIVALUE_2400ha_M3RL_4WM_function_50reg(n)
+      };
+}
+
+//-3 RL Values
+function VDIVALUE_2400ha_M3RL_1WM_function_50reg(n) {
+    return (32.4208 / Math.pow((parseInt(n) + 4.2756), 0.4558) + +8.3406)
+}
+
+function VDIVALUE_2400ha_M3RL_2WM_function_50reg(n) {
+    return (46.0563 / Math.pow((parseInt(n) + 3.8569), 0.3746) + 10.1330)
+}
+
+function VDIVALUE_2400ha_M3RL_3WM_function_50reg(n) {
+    return (58.0435 / Math.pow((parseInt(n) + 4.4775), 0.3663) + 12.3952)
+}
+
+function VDIVALUE_2400ha_M3RL_4WM_function_50reg(n) {
+    return (71.2317 / Math.pow((parseInt(n) + 5.4259), 0.3854) + 14.4587)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// Flow Rate
+
+function flowrate (w){
+    return(0.005 * Math.pow(parseFloat(w), 2) - 0.045 * parseFloat(w) + 0.89)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+///////////////////////////////////////////////////////////////////////////
+/////////////////////////// -0 RL BLOCK ///////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+function All_VDIValues_For_M0RL_2400(n){
+    return {
+        w1: VDIVALUE_2400ha_M0RL_1WM(n),
+        w2: VDIVALUE_2400ha_M0RL_2WM(n),
+        w3: VDIVALUE_2400ha_M0RL_3WM(n),
+        w4: VDIVALUE_2400ha_M0RL_4WM(n)
+      };
+}
+
+function All_VDIFunctions_For_M0RL_2400(n){
+    return {
+        w1: VDIVALUE_2400ha_M0RL_1WM_function(n),
+        w2: VDIVALUE_2400ha_M0RL_2WM_function(n),
+        w3: VDIVALUE_2400ha_M0RL_3WM_function(n),
+        w4: VDIVALUE_2400ha_M0RL_4WM_function(n)
+      };
+}
+
+//-3 RL Values
+
+function VDIVALUE_2400ha_M0RL_1WM(n) {
+
+    if(n == 1){return(15.9);}
+    if(n == 2){return(13.9);}
+    if(n == 3){return(12.3);}
+    if(n == 4){return(11.4);}
+    if(n == 5){return(10.9);}
+
+    return -999;
+}
+function VDIVALUE_2400ha_M0RL_1WM_function(n) {
+    return (-999)
+}
+
+function VDIVALUE_2400ha_M0RL_2WM(n) {
+
+    if(n == 1){return(24.7);}
+    if(n == 2){return(22.1);}
+    if(n == 3){return(19.9);}
+    if(n == 4){return(18.9);}
+    if(n == 5){return(18.2);}
+
+    return -999;
+}
+function VDIVALUE_2400ha_M0RL_2WM_function(n) {
+    return (-999)
+}
+
+function VDIVALUE_2400ha_M0RL_3WM(n) {
+
+    if(n == 1){return(31.1);}
+    if(n == 2){return(28.1);}
+    if(n == 3){return(25.8);}
+    if(n == 4){return(24.5);}
+    if(n == 5){return(23.7);}
+
+    return -999;
+}
+function VDIVALUE_2400ha_M0RL_3WM_function(n) {
+    return (-999)
+}
+
+function VDIVALUE_2400ha_M0RL_4WM(n) {
+
+    if(n == 1){return(36.0);}
+    if(n == 2){return(33.0);}
+    if(n == 3){return(30.6);}
+    if(n == 4){return(29.2);}
+    if(n == 5){return(28.3);}
+
+    return -999;
+}
+function VDIVALUE_2400ha_M0RL_4WM_function(n) {
+    return (-999)
 }
 
 
@@ -313,7 +446,7 @@ function VDIVALUE_2400ha_M5RL_1WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M5RL_1WM_function(n) {
-    return (-4.2400 * Math.log(n) + 24.4398)
+    return (-999)
 }
 
 function VDIVALUE_2400ha_M5RL_2WM(n) {
@@ -327,7 +460,7 @@ function VDIVALUE_2400ha_M5RL_2WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M5RL_2WM_function(n) {
-    return (-5.8581 * Math.log(n) + 38.2891)
+    return (-999)
 }
 
 function VDIVALUE_2400ha_M5RL_3WM(n) {
@@ -341,7 +474,7 @@ function VDIVALUE_2400ha_M5RL_3WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M5RL_3WM_function(n) {
-    return (-6.4962 * Math.log(n) + 48.4001)
+    return (-999)
 }
 
 function VDIVALUE_2400ha_M5RL_4WM(n) {
@@ -355,5 +488,6 @@ function VDIVALUE_2400ha_M5RL_4WM(n) {
     return -999;
 }
 function VDIVALUE_2400ha_M5RL_4WM_function(n) {
-    return (-6.4547 * Math.log(n) + 55.8404)
+    return (-999)
 }
+*/

@@ -3,18 +3,19 @@ async function calculateExtraction() {
 
     const RLInput = document.getElementById("RLInput");
     const ConductivityInput = document.getElementById("ConductivityInput");
-    const GroudWaterTempInput = document.getElementById("GroudWaterTempInput");
+    //const GroudWaterTempInput = document.getElementById("GroudWaterTempInput");
     const EWSAmountInput = document.getElementById("EWSAmountInput");
 
-    var RL_value = RLInput.value;
+    var RL_value = -3;
     var Conductivity_value = ConductivityInput.value;
-    var GroudWaterTemp_value = GroudWaterTempInput.value;
+    //var GroudWaterTemp_value = GroudWaterTempInput.value;
     var EWSAmount_value = EWSAmountInput.value;
 
     var pecificHeatExtractionValue = await GetSpecificHeatExtractionValue(n = EWSAmount_value, w = Conductivity_value, rl = RL_value)
 
     animateResult(pecificHeatExtractionValue);
 }
+
 
 
 function animateResult(targetValue) {

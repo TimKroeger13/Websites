@@ -16,82 +16,126 @@
 </head>
 
 <body>
+  <div class="OuterWrapFper">
+    <div class="ScaleContainer">
 
-  <span class="Headder">Sondenfeld Entzug</span>
+      <span class="Headder">Sondenfeld Entzug</span>
 
-<div class=inputParameter>
+      <!-- Fixed Parameters Section -->
+      <div class="ParameterSection">
+        <h2 class="SectionHeader">Feste Parameter</h2>
+        <div class="ParameterGrid">
 
-  <div class="InputGroup">
-    <span class="InputLabel">Minimale Rücklauftemperatur: </span>
-    <input id="RLInput" class="NumberInputField" type="number" min="-5" max="0" step="0.1" value="-2.8"
-      title="-5 bis 0">
+          <div class="InputGroup">
+            <span class="InputLabel">Volllaststunden: </span>
+            <div class="FixedValueField">2400</div>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Minimale Rücklauftemperatur: </span>
+            <div class="FixedValueField">-3°C</div>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Sondenabstand: </span>
+            <div class="FixedValueField">6m</div>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Ungestörte Grundwasser Temperatur: </span>
+            <div class="FixedValueField">11°C</div>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Borlochwiederstand: </span>
+            <div class="FixedValueField">0.1</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Variable Parameters Section -->
+      <div class="ParameterSection">
+        <h2 class="SectionHeader">Variable Parameter</h2>
+        <div class="ParameterGrid">
+
+          <div class="InputGroup">
+            <span class="InputLabel">Wärmeleitfähigkeit: </span>
+            <input id="ConductivityInput" class="NumberInputField" type="number" min="1" max="4" step="0.1" value="2.5"
+              title="1 bis 2">
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">EWS Anzahl: </span>
+            <input id="EWSAmountInput" class="NumberInputField" type="number" min="1" step="1" value="1" title=">0">
+          </div>
+
+          <!--
+          <div class="InputGroup">
+            <span class="InputLabel">Ungestörte Grundwasser Temperatur: </span>
+            <input id="GroudWaterTempInput" class="NumberInputField" type="number" min="0" max="100" step="0.1"
+              value="12" title="0 bis 100">
+          </div>
+          -->
+
+          <div class="InputGroup">
+            <span class="InputLabel">Strömungsart:</span>
+            <select id="FlowType" class="NumberInputField">
+              <option value="laminar">Laminar</option>
+              <option value="turbolent">Turbulent</option>
+            </select>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Hinterfüllungs Zement:</span>
+            <select id="GroutConducValue" class="NumberInputField">
+              <option value="none">0.8 W/MK</option>
+              <option value="thermo">2 W/MK</option>
+            </select>
+          </div>
+
+          <div class="InputGroup">
+            <span class="InputLabel">Regeneration vorhanden:</span>
+            <select id="regenSelect" class="NumberInputField">
+              <option value="none">Keine Regeneration</option>
+              <option value="half">50% Regeneration</option>
+              <option value="full">100% Regeneration</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Calculation Button -->
+      <div class="CalcualteGroup">
+        <button type="button" class="buttonClas" onclick="calculateExtraction()">Brechnen</button>
+      </div>
+
+      <!-- Output -->
+      <div class="OutputGroup">
+        <span class="OutputLabel">Entzug in W/m:</span>
+        <span class="OutputResult" id="OutputResultID">0</span>
+      </div>
+
+    </div>
   </div>
-
-  <div class="InputGroup">
-    <span class="InputLabel">Wärmeleitfähigkeit: </span>
-    <input id="ConductivityInput" class="NumberInputField" type="number" min="1" max="4" step="0.1" value="2.8"
-      title="1 bis 2">
-  </div>
-
-  <div class="InputGroup">
-    <span class="InputLabel">EWS Anzahl: </span>
-    <input id="EWSAmountInput" class="NumberInputField" type="number" min="1" step="1" value="23" title=">0">
-  </div>
-
-  <div class="InputGroup">
-    <span class="InputLabel">Ungestörte Grundwasser Temperatur: </span>
-    <input id="GroudWaterTempInput" class="NumberInputField" type="number" min="0" max="100" step="0.1" value="12" title="0 bis 100">
-  </div>
-
-  <!--Checkboxes-->
-
-  <div class="InputGroup">
-    <span class="InputLabel">Flow Type: </span>
-    <label class="ToggleSwitch">
-      <input type="checkbox" id="toggleFlow">
-      <span class="Slider"></span>
-    </label>
-    <span id="FlowValue" class="IndicatorString">Laminar</span>
-  </div>
-
-
-  <div class="InputGroup">
-    <span class="InputLabel">Thermobeton vorhanden: </span>
-    <label class="ToggleSwitch">
-      <input type="checkbox" id="toggleConcrete">
-      <span class="Slider"></span>
-    </label>
-    <span id="GroutConducValue" class="IndicatorString">0.8 W/M</span>
-  </div>
-
-  <p></p>
-
-  <div class="CalcualteGroup">
-    <button type="button" class="buttonClas" onclick="calculateExtraction()">Calcualte</button>
-  </div>
-
-  <p></p>
-
-  <div class="OutputGroup">
-    <span class="OutputLabel">Enzug in W/m:</span>
-    <span class="OutputResult" id="OutputResultID">0</span>
-  </div>
-</div>
-
+</body>
 
 <script>
 
-    //Conductivity Input
-    const RLInput = document.getElementById("RLInput");
-    RLInput.addEventListener("input", () => {
-      let val = parseFloat(RLInput.value);
+  /*
+  //Rücklauf Input
+  const RLInput = document.getElementById("RLInput");
+  RLInput.addEventListener("input", () => {
+    let val = parseFloat(RLInput.value);
 
-      if (isNaN(val)) return;
-      if (val < -5) RLInput.value = -5;
-      if (val > 0) RLInput.value = 0;
+    if (isNaN(val)) return;
+    if (val < -5) RLInput.value = -5;
+    if (val > 0) RLInput.value = 0;
 
-      calculateExtraction();
-    });
+    calculateExtraction();
+  });
+  */
 
   //Conductivity Input
   const ConductivityInput = document.getElementById("ConductivityInput");
@@ -105,7 +149,8 @@
     calculateExtraction();
   });
 
-    //Ground Water temperatur 
+  /*
+  //Ground Water temperatur 
   const GroudWaterTempInput = document.getElementById("GroudWaterTempInput");
   GroudWaterTempInput.addEventListener("input", () => {
     let val = parseFloat(GroudWaterTempInput.value);
@@ -116,6 +161,7 @@
 
     calculateExtraction();
   });
+  */
 
   //EAS amount Input
   const EWSAmountInput = document.getElementById("EWSAmountInput");
@@ -128,33 +174,21 @@
     calculateExtraction();
   });
 
-  //FlowType
-  const toggleFlow = document.getElementById("toggleFlow");
-  const FlowValue = document.getElementById("FlowValue");
-  toggleFlow.addEventListener("input", () => {
-    
-    if(toggleFlow.checked){
-      FlowValue.innerHTML = "Turbolent";
-    }else{
-      FlowValue.innerHTML = "Laminar"; 
-    }
-
-    calculateExtraction();
-    
+  const FlowSelect = document.getElementById('FlowType');
+  FlowSelect.addEventListener('change', function () {
+    calculateExtraction()
   });
 
-  const toggleConcrete = document.getElementById("toggleConcrete");
-  const GroutConducValue = document.getElementById("GroutConducValue");
-  toggleConcrete.addEventListener("input", () => {
-    if(toggleConcrete.checked){
-      GroutConducValue.innerHTML = "2.0 W/M";
-    }else{
-      GroutConducValue.innerHTML = "0.8 W/M"; 
-    }
-
-    calculateExtraction();
-
+  const GroutSelect = document.getElementById('GroutConducValue');
+  GroutSelect.addEventListener('change', function () {
+    calculateExtraction()
   });
+
+  const regenSelect = document.getElementById('regenSelect');
+  regenSelect.addEventListener('change', function () {
+    calculateExtraction()
+  });
+
 
   calculateExtraction();
 
