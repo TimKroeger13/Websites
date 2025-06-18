@@ -107,17 +107,15 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
 
     const GroutMode = document.getElementById('GroutConducValue').value;
 
-    var Groutdjust;
-    if (GroutMode === 'thermo') {
-        Groutdjust = 1.1;
-    }
-    if (GroutMode === 'none') {
-        Groutdjust = 1;
-    }
-
     var TotalAdjust = FlowrateAdjust;
 
-    return total_r * TotalAdjust * Groutdjust;
+    var ReturnValue = total_r * TotalAdjust
+
+    if (GroutMode === 'thermo') {
+        ReturnValue = (1.21 * ReturnValue) -1.97
+    }
+
+    return ReturnValue;
 
 }
 
