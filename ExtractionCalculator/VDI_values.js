@@ -91,10 +91,6 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
 
     var total_r = rl_weigth_lower * Low_Rl_total_W+ rl_weitgh_upper * Upper_Rl_total_W;
 
-    
-
-
-
     const flwonMode = document.getElementById('FlowType').value;
 
     var FlowrateAdjust;
@@ -112,7 +108,9 @@ async function GetSpecificHeatExtractionValue(n,w,rl){
     var ReturnValue = total_r * TotalAdjust
 
     if (GroutMode === 'thermo') {
-        ReturnValue = (1.21 * ReturnValue) -1.97
+        PercentageIncrease = (0.5155 * ReturnValue -0.6591)/100+1
+        ReturnValue = ReturnValue * PercentageIncrease
+    
     }
 
     return ReturnValue;
