@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nominatim Address Geocoder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: auto;
+        }
+        
+        .status.idle { background: #e9ecef; color: #495057; }
+        .status.processing { background: #fff3cd; color: #856404; }
+        .status.completed { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        
+        .table-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+        
+        .address-cell {
+            min-width: 300px;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+        
+        .coord-cell {
+            min-width: 120px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .editable {
+            border: none;
+            background: transparent;
+            width: 100%;
+            min-height: 20px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .editable:focus {
+            outline: 2px solid #007bff;
+            background: #f8f9ff;
+        }
+        
+        .row-processing {
+            background: #fff3cd;
+        }
+        
+        .row-completed {
+            background: #d4edda;
+        }
+        
+        .row-error {
+            background: #f8d7da;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .add-row-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+        
+        .add-row-btn:hover:not(:disabled) {
+            background: #1e7e34;
+        }
+        
+        .delay-input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 80px;
+        }
+        
+        .paste-area {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            background: #f8f9ff;
+            margin-bottom: 20px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        .paste-area:focus {
+            outline: none;
+            border-color: #0056b3;
+            background: #f0f7ff;
+        }
+        
+        .paste-info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nominatim Address Geocoder</h1>
+        
+        <div class="controls">
+            <button id="processBtn">Process All Addresses</button>
+            <button id="clearBtn">Clear All</button>
+            <button id="exportBtn">Export CSV</button>
+            <label>Delay (ms): <input type="number" id="delayInput" class="delay-input" value="1000" min="500" max="5000"></label>
+            <div id="status" class="status idle">Ready</div>
+        </div>
+        
+        <div class="paste-info">
+            <strong>Bulk Import:</strong> Copy rows from Excel and paste them in the area below. Each row should contain one address.
+        </div>
+        
+        <textarea id="pasteArea" class="paste-area" placeholder="Paste Excel rows here (one address per line or tab-separated)...&#10;&#10;Example:&#10;Turmstraße 20, mitte 10559&#10;Alexanderplatz 1, Berlin&#10;Potsdamer Platz 5, Berlin"></textarea>
+        
+        <button id="importBtn" class="add-row-btn">Import Addresses</button>
+        
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <div class="table-container">
+            <table id="addressTable">
+                <thead>
+                    <tr>
+                        <th class="address-cell">Address</th>
+                        <th class="coord-cell">Longitude</th>
+                        <th class="coord-cell">Latitude</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Initial empty rows -->
+                    <tr>
+                        <td class="address-cell">
+                            <textarea class="editable" placeholder="Paste address here..."></textarea>
+                        </td>
+                        <td class="coord-cell"></td>
+                        <td class="coord-cell"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <button id="addRowBtn" class="add-row-btn">Add More Rows</button>
+    </div>
+
+    <script>
+        class NominatimGeocoder {
+            constructor() {
+                this.processBtn = document.getElementById('processBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.exportBtn = document.getElementById('exportBtn');
+                this.addRowBtn = document.getElementById('addRowBtn');
+                this.importBtn = document.getElementById('importBtn');
+                this.pasteArea = document.getElementById('pasteArea');
+                this.status = document.getElementById('status');
+                this.progressFill = document.getElementById('progressFill');
+                this.delayInput = document.getElementById('delayInput');
+                this.tableBody = document.getElementById('tableBody');
+                
+                this.setupEventListeners();
+                this.addInitialRows();
+            }
+            
+            setupEventListeners() {
+                this.processBtn.addEventListener('click', () => this.processAllAddresses());
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+                this.exportBtn.addEventListener('click', () => this.exportCSV());
+                this.addRowBtn.addEventListener('click', () => this.addRows(10));
+                this.importBtn.addEventListener('click', () => this.importAddresses());
+                
+                // Auto-import on paste
+                this.pasteArea.addEventListener('paste', (e) => {
+                    setTimeout(() => this.importAddresses(), 100);
+                });
+            }
+            
+            addInitialRows() {
+                this.addRows(20);
+            }
+            
+            addRows(count) {
+                for (let i = 0; i < count; i++) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="address-cell">
+                            <textarea class="editable" placeholder="Paste address here..."></textarea>
+                        </td>
+                        <td class="coord-cell"></td>
+                        <td class="coord-cell"></td>
+                    `;
+                    this.tableBody.appendChild(row);
+                }
+            }
+            
+            importAddresses() {
+                const pasteContent = this.pasteArea.value.trim();
+                if (!pasteContent) {
+                    alert('Please paste some addresses first!');
+                    return;
+                }
+                
+                // Split by lines and clean up
+                const lines = pasteContent.split(/\r?\n/).filter(line => line.trim());
+                const addresses = [];
+                
+                lines.forEach(line => {
+                    // Handle tab-separated data (from Excel)
+                    if (line.includes('\t')) {
+                        // Split by tabs and take the first non-empty column
+                        const columns = line.split('\t');
+                        for (let col of columns) {
+                            const addr = col.trim();
+                            if (addr && addr.length > 5) { // Basic address validation
+                                addresses.push(addr);
+                                break; // Take only the first valid column per row
+                            }
+                        }
+                    } else {
+                        // Single column data
+                        const addr = line.trim();
+                        if (addr.length > 5) { // Basic address validation
+                            addresses.push(addr);
+                        }
+                    }
+                });
+                
+                if (addresses.length === 0) {
+                    alert('No valid addresses found in the pasted content!');
+                    return;
+                }
+                
+                // Clear existing content first
+                this.clearAll();
+                
+                // Make sure we have enough rows
+                const currentRows = this.tableBody.querySelectorAll('tr').length;
+                const neededRows = addresses.length;
+                if (neededRows > currentRows) {
+                    this.addRows(neededRows - currentRows + 5); // Add some extra
+                }
+                
+                // Fill the addresses into the table
+                const rows = this.tableBody.querySelectorAll('tr');
+                addresses.forEach((address, index) => {
+                    if (index < rows.length) {
+                        const textarea = rows[index].querySelector('textarea');
+                        if (textarea) {
+                            textarea.value = address;
+                        }
+                    }
+                });
+                
+                // Clear the paste area
+                this.pasteArea.value = '';
+                
+                this.setStatus('completed', `Imported ${addresses.length} addresses`);
+                
+                // Auto-scroll to table
+                document.getElementById('addressTable').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            async processAllAddresses() {
+                const rows = Array.from(this.tableBody.querySelectorAll('tr'));
+                const addressRows = rows.filter(row => {
+                    const textarea = row.querySelector('textarea');
+                    return textarea && textarea.value.trim();
+                });
+                
+                if (addressRows.length === 0) {
+                    alert('Please enter some addresses first!');
+                    return;
+                }
+                
+                this.processBtn.disabled = true;
+                this.setStatus('processing', `Processing ${addressRows.length} addresses...`);
+                this.progressFill.style.width = '0%';
+                
+                const delay = parseInt(this.delayInput.value) || 1000;
+                
+                for (let i = 0; i < addressRows.length; i++) {
+                    const row = addressRows[i];
+                    const textarea = row.querySelector('textarea');
+                    const address = textarea.value.trim();
+                    
+                    if (!address) continue;
+                    
+                    row.className = 'row-processing';
+                    this.setStatus('processing', `Processing ${i + 1}/${addressRows.length}: ${address.substring(0, 50)}...`);
+                    
+                    try {
+                        const coords = await this.geocodeAddress(address);
+                        
+                        if (coords) {
+                            const cells = row.querySelectorAll('td');
+                            cells[1].textContent = coords.longitude.toFixed(6);
+                            cells[2].textContent = coords.latitude.toFixed(6);
+                            row.className = 'row-completed';
+                        } else {
+                            row.className = 'row-error';
+                        }
+                    } catch (error) {
+                        console.error('Error geocoding address:', error);
+                        row.className = 'row-error';
+                    }
+                    
+                    const progress = ((i + 1) / addressRows.length) * 100;
+                    this.progressFill.style.width = `${progress}%`;
+                    
+                    // Delay between requests to respect API limits
+                    if (i < addressRows.length - 1) {
+                        await this.sleep(delay);
+                    }
+                }
+                
+                this.processBtn.disabled = false;
+                this.setStatus('completed', `Completed processing ${addressRows.length} addresses`);
+            }
+            
+            async geocodeAddress(address) {
+                const encodedAddress = encodeURIComponent(address);
+                const url = `https://nominatim.openstreetmap.org/search?q="${encodedAddress}"&format=geojson&limit=1`;
+                
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            'User-Agent': 'Address Geocoder Tool'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.features && data.features.length > 0) {
+                        const coordinates = data.features[0].geometry.coordinates;
+                        return {
+                            longitude: coordinates[0],
+                            latitude: coordinates[1]
+                        };
+                    }
+                    
+                    return null;
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                    throw error;
+                }
+            }
+            
+            clearAll() {
+                const rows = this.tableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const textarea = row.querySelector('textarea');
+                    const cells = row.querySelectorAll('td');
+                    
+                    if (textarea) textarea.value = '';
+                    cells[1].textContent = '';
+                    cells[2].textContent = '';
+                    row.className = '';
+                });
+                
+                this.progressFill.style.width = '0%';
+                this.setStatus('idle', 'Ready');
+            }
+            
+            exportCSV() {
+                const rows = Array.from(this.tableBody.querySelectorAll('tr'));
+                const csvData = [];
+                csvData.push(['Address', 'Longitude', 'Latitude']);
+                
+                rows.forEach(row => {
+                    const textarea = row.querySelector('textarea');
+                    const cells = row.querySelectorAll('td');
+                    
+                    if (textarea && textarea.value.trim()) {
+                        csvData.push([
+                            textarea.value.trim(),
+                            cells[1].textContent,
+                            cells[2].textContent
+                        ]);
+                    }
+                });
+                
+                const csvContent = csvData.map(row => 
+                    row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(',')
+                ).join('\n');
+                
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'geocoded_addresses.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+            
+            setStatus(type, message) {
+                this.status.className = `status ${type}`;
+                this.status.textContent = message;
+            }
+            
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            new NominatimGeocoder();
+        });
+    </script>
+</body>
+</html>
