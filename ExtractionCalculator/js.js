@@ -11,15 +11,19 @@ async function calculateExtraction() {
     //var GroudWaterTemp_value = GroudWaterTempInput.value;
     var EWSAmount_value = EWSAmountInput.value;
 
-    var pecificHeatExtractionValue = await GetSpecificHeatExtractionValue(n = EWSAmount_value, w = Conductivity_value, rl = RL_value)
+    var specificHeatExtractionValue = await GetSpecificHeatExtractionValue(n = EWSAmount_value, w = Conductivity_value, rl = RL_value)
+    var FieldExtraction = await CalculateFieldHeatSupply(wm = specificHeatExtractionValue);
+    const extractionOutput = document.getElementById("OutputResultID");
+    const FieldOutput = document.getElementById("OutputResultID_Field");
 
-    animateResult(pecificHeatExtractionValue);
+    animateResult(specificHeatExtractionValue,extractionOutput);
+    animateResult(FieldExtraction,FieldOutput);
 }
 
 
 
-function animateResult(targetValue) {
-    const element = document.getElementById("OutputResultID");
+function animateResult(targetValue,element) {
+    
     const duration = 500; // animation duration in ms
     const frameRate = 30;  // frames per second
     const totalFrames = Math.round(duration / (1000 / frameRate));
