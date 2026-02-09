@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -31,6 +31,7 @@
             gap: 10px;
             margin-bottom: 20px;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         button {
@@ -165,7 +166,7 @@
         
         .paste-area {
             width: 100%;
-            min-height: 100px;
+            min-height: 120px;
             padding: 10px;
             border: 2px dashed #007bff;
             border-radius: 5px;
@@ -173,6 +174,7 @@
             margin-bottom: 20px;
             font-family: monospace;
             resize: vertical;
+            font-size: 12px;
         }
         
         .paste-area:focus {
@@ -186,6 +188,28 @@
             color: #666;
             margin-bottom: 10px;
         }
+        
+        .export-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .export-en {
+            background: #17a2b8;
+        }
+        
+        .export-en:hover:not(:disabled) {
+            background: #138496;
+        }
+        
+        .export-de {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .export-de:hover:not(:disabled) {
+            background: #e0a800;
+        }
     </style>
 </head>
 <body>
@@ -195,18 +219,22 @@
         <div class="controls">
             <button id="processBtn">Process All Addresses</button>
             <button id="clearBtn">Clear All</button>
-            <button id="exportBtn">Export CSV</button>
+            <div class="export-group">
+                <button id="exportBtnEN" class="export-en">Export CSV (English)</button>
+                <button id="exportBtnDE" class="export-de">Export CSV (Deutsch)</button>
+            </div>
             <label>Delay (ms): <input type="number" id="delayInput" class="delay-input" value="1000" min="500" max="5000"></label>
             <div id="status" class="status idle">Ready</div>
         </div>
         
         <div class="paste-info">
-            <strong>Bulk Import:</strong> Copy rows from Excel and paste them in the area below. Each row should contain one address.
+            <strong>Bulk Import:</strong> Copy 3 columns from Excel (City, Street, Postal Code) and paste them below.<br>
+            The tool will combine them to geocode and then split them back in the export.
         </div>
         
-        <textarea id="pasteArea" class="paste-area" placeholder="Paste Excel rows here (one address per line or tab-separated)...&#10;&#10;Example:&#10;Turmstraße 20, mitte 10559&#10;Alexanderplatz 1, Berlin&#10;Potsdamer Platz 5, Berlin"></textarea>
+        <textarea id="pasteArea" class="paste-area" placeholder="Paste Excel data here (3 columns: City, Street, Postal Code)...&#10;&#10;Example:&#10;Berlin&#9;Am Oberhafen&#9;12057&#10;Berlin&#9;Am Oberhafen 2&#9;12057&#10;Berlin&#9;Ballinstraße 3&#9;12359"></textarea>
         
-        <button id="importBtn" class="add-row-btn">Import Addresses</button>
+        <button id="importBtn" class="add-row-btn">Import Data from Excel</button>
         
         <div class="progress-bar">
             <div id="progressFill" class="progress-fill" style="width: 0%"></div>
@@ -216,20 +244,15 @@
             <table id="addressTable">
                 <thead>
                     <tr>
-                        <th class="address-cell">Address</th>
+                        <th class="address-cell">City</th>
+                        <th class="address-cell">Street</th>
+                        <th class="coord-cell">Postal Code</th>
                         <th class="coord-cell">Longitude</th>
                         <th class="coord-cell">Latitude</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Initial empty rows -->
-                    <tr>
-                        <td class="address-cell">
-                            <textarea class="editable" placeholder="Paste address here..."></textarea>
-                        </td>
-                        <td class="coord-cell"></td>
-                        <td class="coord-cell"></td>
-                    </tr>
+                    <!-- Rows will be added dynamically -->
                 </tbody>
             </table>
         </div>
@@ -242,7 +265,8 @@
             constructor() {
                 this.processBtn = document.getElementById('processBtn');
                 this.clearBtn = document.getElementById('clearBtn');
-                this.exportBtn = document.getElementById('exportBtn');
+                this.exportBtnEN = document.getElementById('exportBtnEN');
+                this.exportBtnDE = document.getElementById('exportBtnDE');
                 this.addRowBtn = document.getElementById('addRowBtn');
                 this.importBtn = document.getElementById('importBtn');
                 this.pasteArea = document.getElementById('pasteArea');
@@ -258,7 +282,8 @@
             setupEventListeners() {
                 this.processBtn.addEventListener('click', () => this.processAllAddresses());
                 this.clearBtn.addEventListener('click', () => this.clearAll());
-                this.exportBtn.addEventListener('click', () => this.exportCSV());
+                this.exportBtnEN.addEventListener('click', () => this.exportCSV('en'));
+                this.exportBtnDE.addEventListener('click', () => this.exportCSV('de'));
                 this.addRowBtn.addEventListener('click', () => this.addRows(10));
                 this.importBtn.addEventListener('click', () => this.importAddresses());
                 
@@ -277,7 +302,13 @@
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td class="address-cell">
-                            <textarea class="editable" placeholder="Paste address here..."></textarea>
+                            <textarea class="editable" placeholder="City..."></textarea>
+                        </td>
+                        <td class="address-cell">
+                            <textarea class="editable" placeholder="Street..."></textarea>
+                        </td>
+                        <td class="coord-cell">
+                            <input type="text" class="editable" placeholder="Postal Code">
                         </td>
                         <td class="coord-cell"></td>
                         <td class="coord-cell"></td>
@@ -289,37 +320,46 @@
             importAddresses() {
                 const pasteContent = this.pasteArea.value.trim();
                 if (!pasteContent) {
-                    alert('Please paste some addresses first!');
+                    alert('Please paste some data first!');
                     return;
                 }
                 
                 // Split by lines and clean up
                 const lines = pasteContent.split(/\r?\n/).filter(line => line.trim());
-                const addresses = [];
+                const data = [];
                 
-                lines.forEach(line => {
-                    // Handle tab-separated data (from Excel)
-                    if (line.includes('\t')) {
-                        // Split by tabs and take the first non-empty column
-                        const columns = line.split('\t');
-                        for (let col of columns) {
-                            const addr = col.trim();
-                            if (addr && addr.length > 5) { // Basic address validation
-                                addresses.push(addr);
-                                break; // Take only the first valid column per row
-                            }
-                        }
-                    } else {
-                        // Single column data
-                        const addr = line.trim();
-                        if (addr.length > 5) { // Basic address validation
-                            addresses.push(addr);
+                let startIndex = 0;
+                // Skip header row if it exists
+                if (lines.length > 0 && (lines[0].toLowerCase().includes('city') || 
+                    lines[0].toLowerCase().includes('street') || 
+                    lines[0].toLowerCase().includes('stadt') || 
+                    lines[0].toLowerCase().includes('straße'))) {
+                    startIndex = 1;
+                }
+                
+                for (let i = startIndex; i < lines.length; i++) {
+                    const line = lines[i];
+                    // Split by tabs (Excel clipboard format)
+                    const columns = line.split('\t');
+                    
+                    if (columns.length >= 3) {
+                        const city = columns[0] ? columns[0].trim() : '';
+                        const street = columns[1] ? columns[1].trim() : '';
+                        const postalCode = columns[2] ? columns[2].trim() : '';
+                        
+                        // Only add if at least city or street is not empty
+                        if (city.length > 0 || street.length > 0) {
+                            data.push({
+                                city: city,
+                                street: street,
+                                postalCode: postalCode
+                            });
                         }
                     }
-                });
+                }
                 
-                if (addresses.length === 0) {
-                    alert('No valid addresses found in the pasted content!');
+                if (data.length === 0) {
+                    alert('No valid data found! Please paste 3 columns (City, Street, Postal Code)');
                     return;
                 }
                 
@@ -328,26 +368,36 @@
                 
                 // Make sure we have enough rows
                 const currentRows = this.tableBody.querySelectorAll('tr').length;
-                const neededRows = addresses.length;
+                const neededRows = data.length;
                 if (neededRows > currentRows) {
                     this.addRows(neededRows - currentRows + 5); // Add some extra
                 }
                 
-                // Fill the addresses into the table
+                // Fill the data into the table
                 const rows = this.tableBody.querySelectorAll('tr');
-                addresses.forEach((address, index) => {
+                data.forEach((item, index) => {
                     if (index < rows.length) {
-                        const textarea = rows[index].querySelector('textarea');
-                        if (textarea) {
-                            textarea.value = address;
-                        }
+                        const row = rows[index];
+                        const cells = row.querySelectorAll('td');
+                        
+                        // City
+                        const cityTextarea = cells[0].querySelector('textarea');
+                        if (cityTextarea) cityTextarea.value = item.city;
+                        
+                        // Street
+                        const streetTextarea = cells[1].querySelector('textarea');
+                        if (streetTextarea) streetTextarea.value = item.street;
+                        
+                        // Postal Code
+                        const postalInput = cells[2].querySelector('input');
+                        if (postalInput) postalInput.value = item.postalCode;
                     }
                 });
                 
                 // Clear the paste area
                 this.pasteArea.value = '';
                 
-                this.setStatus('completed', `Imported ${addresses.length} addresses`);
+                this.setStatus('completed', `Imported ${data.length} rows`);
                 
                 // Auto-scroll to table
                 document.getElementById('addressTable').scrollIntoView({ behavior: 'smooth' });
@@ -356,12 +406,22 @@
             async processAllAddresses() {
                 const rows = Array.from(this.tableBody.querySelectorAll('tr'));
                 const addressRows = rows.filter(row => {
-                    const textarea = row.querySelector('textarea');
-                    return textarea && textarea.value.trim();
+                    const cells = row.querySelectorAll('td');
+                    const cityTextarea = cells[0].querySelector('textarea');
+                    const streetTextarea = cells[1].querySelector('textarea');
+                    const longitudeCell = cells[3];
+                    const latitudeCell = cells[4];
+                    
+                    // Only process rows with at least city or street, but missing coordinates
+                    const hasAddress = (cityTextarea && cityTextarea.value.trim()) || 
+                                      (streetTextarea && streetTextarea.value.trim());
+                    const missingCoords = !longitudeCell.textContent.trim() || !latitudeCell.textContent.trim();
+                    
+                    return hasAddress && missingCoords;
                 });
                 
                 if (addressRows.length === 0) {
-                    alert('Please enter some addresses first!');
+                    alert('No addresses need geocoding! (All rows either empty or already have coordinates)');
                     return;
                 }
                 
@@ -373,21 +433,26 @@
                 
                 for (let i = 0; i < addressRows.length; i++) {
                     const row = addressRows[i];
-                    const textarea = row.querySelector('textarea');
-                    const address = textarea.value.trim();
+                    const cells = row.querySelectorAll('td');
                     
-                    if (!address) continue;
+                    const city = cells[0].querySelector('textarea').value.trim();
+                    const street = cells[1].querySelector('textarea').value.trim();
+                    const postalCode = cells[2].querySelector('input').value.trim();
+                    
+                    // Combine into full address for geocoding
+                    const fullAddress = `${street} ${postalCode} ${city}`.trim();
+                    
+                    if (!fullAddress) continue;
                     
                     row.className = 'row-processing';
-                    this.setStatus('processing', `Processing ${i + 1}/${addressRows.length}: ${address.substring(0, 50)}...`);
+                    this.setStatus('processing', `Processing ${i + 1}/${addressRows.length}: ${fullAddress.substring(0, 50)}...`);
                     
                     try {
-                        const coords = await this.geocodeAddress(address);
+                        const coords = await this.geocodeAddress(fullAddress);
                         
                         if (coords) {
-                            const cells = row.querySelectorAll('td');
-                            cells[1].textContent = coords.longitude.toFixed(6);
-                            cells[2].textContent = coords.latitude.toFixed(6);
+                            cells[3].textContent = coords.longitude.toFixed(6);
+                            cells[4].textContent = coords.latitude.toFixed(6);
                             row.className = 'row-completed';
                         } else {
                             row.className = 'row-error';
@@ -445,12 +510,24 @@
             clearAll() {
                 const rows = this.tableBody.querySelectorAll('tr');
                 rows.forEach(row => {
-                    const textarea = row.querySelector('textarea');
                     const cells = row.querySelectorAll('td');
                     
-                    if (textarea) textarea.value = '';
-                    cells[1].textContent = '';
-                    cells[2].textContent = '';
+                    // Clear city
+                    const cityTextarea = cells[0].querySelector('textarea');
+                    if (cityTextarea) cityTextarea.value = '';
+                    
+                    // Clear street
+                    const streetTextarea = cells[1].querySelector('textarea');
+                    if (streetTextarea) streetTextarea.value = '';
+                    
+                    // Clear postal code
+                    const postalInput = cells[2].querySelector('input');
+                    if (postalInput) postalInput.value = '';
+                    
+                    // Clear coordinates
+                    cells[3].textContent = '';
+                    cells[4].textContent = '';
+                    
                     row.className = '';
                 });
                 
@@ -458,34 +535,65 @@
                 this.setStatus('idle', 'Ready');
             }
             
-            exportCSV() {
+            exportCSV(language) {
                 const rows = Array.from(this.tableBody.querySelectorAll('tr'));
                 const csvData = [];
-                csvData.push('Address,Longitude,Latitude'); // Header row
+                
+                // Header row based on language
+                const header = language === 'de' ? 
+                    'Stadt;Straße;Postleitzahl;Längengrad;Breitengrad' : 
+                    'City;Street;Postal Code;Longitude;Latitude';
+                csvData.push(header);
+                
+                // Determine separator based on language (German Excel uses semicolon)
+                const separator = language === 'de' ? ';' : ',';
                 
                 rows.forEach(row => {
-                    const textarea = row.querySelector('textarea');
                     const cells = row.querySelectorAll('td');
                     
-                    if (textarea && textarea.value.trim()) {
-                        const address = textarea.value.trim().replace(/"/g, '""'); // Escape quotes in address
-                        const longitude = cells[1].textContent.trim();
-                        const latitude = cells[2].textContent.trim();
+                    const cityTextarea = cells[0].querySelector('textarea');
+                    const streetTextarea = cells[1].querySelector('textarea');
+                    const postalInput = cells[2].querySelector('input');
+                    
+                    const city = cityTextarea ? cityTextarea.value.trim() : '';
+                    const street = streetTextarea ? streetTextarea.value.trim() : '';
+                    const postalCode = postalInput ? postalInput.value.trim() : '';
+                    let longitude = cells[3].textContent.trim();
+                    let latitude = cells[4].textContent.trim();
+                    
+                    // For German format, replace decimal point with comma
+                    if (language === 'de') {
+                        longitude = longitude.replace('.', ',');
+                        latitude = latitude.replace('.', ',');
+                    }
+                    
+                    // Only export rows that have at least some data
+                    if (city || street || postalCode) {
+                        // Escape quotes in text fields
+                        const cityEscaped = city.replace(/"/g, '""');
+                        const streetEscaped = street.replace(/"/g, '""');
+                        const postalEscaped = postalCode.replace(/"/g, '""');
                         
-                        // Only quote the address field, leave coordinates unquoted
-                        csvData.push(`"${address}",${longitude},${latitude}`);
+                        // Quote text fields, leave coordinates unquoted
+                        csvData.push(`"${cityEscaped}"${separator}"${streetEscaped}"${separator}"${postalEscaped}"${separator}${longitude}${separator}${latitude}`);
                     }
                 });
                 
                 const csvContent = csvData.join('\n');
                 
-                const blob = new Blob([csvContent], { type: 'text/csv' });
+                // Add UTF-8 BOM for proper encoding (especially important for German characters like ß, ä, ö, ü)
+                const BOM = '\uFEFF';
+                const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+                
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'geocoded_addresses.csv';
+                const languageSuffix = language === 'de' ? '_DE' : '_EN';
+                a.download = `geocoded_addresses${languageSuffix}.csv`;
                 a.click();
                 window.URL.revokeObjectURL(url);
+                
+                this.setStatus('completed', `Exported ${csvData.length - 1} rows (${language === 'de' ? 'German' : 'English'} format)`);
             }
             
             setStatus(type, message) {
