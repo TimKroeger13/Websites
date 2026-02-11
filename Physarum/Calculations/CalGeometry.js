@@ -98,14 +98,13 @@ async function calculate(){
 
     var FragmentedNetwork = await getFragmentedLineNetwork(NetworkGeometry, lines);
 
-    //await AddGeoJsonFeatureToMap_CompleteNetwork(FragmentedNetwork);
-
     var CompleteNetwork = await getCompleteNetwork(FragmentedNetwork, ConnectionPoints);
 
-    //await AddGeoJsonFeatureToMap_CompleteNetwork(CompleteNetwork);
+    // Display the source network immediately as the starting "already built" infrastructure
+    var initialNetwork = turf.featureCollection(SourceGeometry.features);
+    await AddGeoJsonFeatureToMap_EntireNetwork(initialNetwork);
 
     [EntireNetwork, EntireUsage] = await calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGeometry)
-
     //Display on map
     
     for (let i = 0; i < EntireNetwork.length; i++) {

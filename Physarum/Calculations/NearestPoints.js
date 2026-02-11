@@ -1,10 +1,24 @@
 async function getNearestPointsOfFeatureCollectionAndLine(SourceGeometry, NetworkGeometry, UserGeometry){
     let pointFeatures = [];
     
-    let OrginalUserPoints = UserGeometry;
-    //add Source point to list
-    OrginalUserPoints.features.push(SourceGeometry.features[0]);
+    // Check if source is a network or point
+    let sourceIsNetwork = SourceGeometry.features.some(f => 
+        f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString'
+    );
     
+    let OrginalUserPoints;
+    
+    if (sourceIsNetwork) {
+        // For network source: use deep copy (don't modify original UserGeometry)
+        OrginalUserPoints = JSON.parse(JSON.stringify(UserGeometry));
+    } else {
+        // For point source: use reference (original behavior - modifies UserGeometry)
+        OrginalUserPoints = UserGeometry;
+        // Add source point to list (will also modify original UserGeometry)
+        OrginalUserPoints.features.push(SourceGeometry.features[0]);
+    }
+    
+    // Find nearest points on network for all user points (and source point if it's a point)
     for (let i = 0; i < OrginalUserPoints.features.length; i++){
     
         let PointDistances = [];
@@ -27,4 +41,3 @@ async function getNearestPointsOfFeatureCollectionAndLine(SourceGeometry, Networ
 
     return pointFeatures;
 }
-    

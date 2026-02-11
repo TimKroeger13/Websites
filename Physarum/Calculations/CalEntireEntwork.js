@@ -14,6 +14,58 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
     var RunningLength = 0;
     var RunningOrder = 0;
     var FoundUsage;
+    
+    // Initialize EntireNetwork with the source network (if it's a network of lines)
+    // This treats the source as already-built infrastructure
+    // For single points, use the original behavior
+    let sourceIsNetwork = SourceGeometry.features.some(f => 
+        f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString'
+    );
+
+    if (sourceIsNetwork) {
+        // Source is a network - initialize EntireNetwork with it
+        for (let i = 0; i < SourceGeometry.features.length; i++) {
+            let sourceFeature = SourceGeometry.features[i];
+            
+            if (sourceFeature.geometry.type === 'LineString' || 
+                sourceFeature.geometry.type === 'MultiLineString') {
+                
+                let featureLength = turf.length(sourceFeature, { units: 'kilometers' }) * 1000;
+                
+                EntireNetwork.push({
+                    id: -1 - i,
+                    data: sourceFeature,
+                    value: 0,
+                    length: featureLength,
+                    PathLength: RunningLength,
+                    PathValue: 0,
+                    Order: RunningOrder,
+                    PathTotalProfit: 0
+                });
+                
+                RunningLength += featureLength;
+                RunningOrder++;
+            }
+        }
+        
+        CurrentSourceGeometry = JSON.parse(JSON.stringify(EntireNetwork));
+    } else {
+        // Source is a point - use original behavior
+        for (let i = 0; i < SourceGeometry.features.length; i++) {
+            CurrentSourceGeometry.push({
+                id: i,
+                data: SourceGeometry.features[i],
+                value: 0,
+                length: 0
+            });
+        }
+    }
+
+    // If we have a network (EntireNetwork is populated), use it as CurrentSourceGeometry
+    // Otherwise, CurrentSourceGeometry already has the point(s)
+    if (EntireNetwork.length > 0) {
+        CurrentSourceGeometry = JSON.parse(JSON.stringify(EntireNetwork));
+    }
 
     const tolerance = 0.1;
 
@@ -34,17 +86,15 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
             length: 0
         });
     }
-    //remove source entry
-    UserGeometryList.pop();
 
-    for (let i = 0; i < SourceGeometry.features.length; i++) {
-        CurrentSourceGeometry.push({
-            id: i,
-            data: SourceGeometry.features[i],
-            value: 0,
-            length: 0
-        });
+    // Remove source entry only if source is a Point (not a network)
+    // When source is a Point, NearestPoints.js adds it to user points temporarily
+    // When source is a network, it doesn't add anything to user points
+    let sourceIsPoint = SourceGeometry.features.some(f => f.geometry.type === 'Point');
+    if (sourceIsPoint) {
+        UserGeometryList.pop(); // Remove the source point that was added
     }
+    //remove source entry
 
     var calculationTotalLength = UserGeometryList.length;
     var calculationCounter = 0;
