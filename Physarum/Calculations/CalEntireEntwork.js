@@ -14,6 +14,8 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
     var RunningLength = 0;
     var RunningOrder = 0;
     var FoundUsage;
+
+    var heatCutoff = 1;
     
     // Initialize EntireNetwork with the source network (if it's a network of lines)
     // This treats the source as already-built infrastructure
@@ -130,12 +132,16 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
 
                         let CurrentLength = CurrentPoint.length + turf.length(CurrentNetworkList[lineId].data, { units: 'kilometers' }) * 1000;
 
-                        CurrentNetworkList[lineId].value = CurrentPointFixValue / CurrentLength;
-                        CurrentNetworkList[lineId].length = CurrentLength;
+                        let propagatedValue = CurrentPointFixValue / CurrentLength;
 
-                        CurrentNetworkPossabilityList.push(CurrentNetworkList[lineId]);
-
-                        CurrentNetworkList.splice(lineId, 1)
+                        if (propagatedValue < heatCutoff) {  // <-- cutoff check
+                            lineId++;
+                        } else {
+                            CurrentNetworkList[lineId].value = propagatedValue;
+                            CurrentNetworkList[lineId].length = CurrentLength;
+                            CurrentNetworkPossabilityList.push(CurrentNetworkList[lineId]);
+                            CurrentNetworkList.splice(lineId, 1);
+                        }
 
                     }else{
                         lineId++;
@@ -167,7 +173,23 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
 
                         lineId = 0;
 
-                    }else{
+                    } else {
+                        // If cutoff pruned everything, retry without cutoff using highest demand path
+                        if (CurrentNetworkPossabilityList.length === 0 && CurrentNetworkList_weighted.length === 0) {
+                            let fallbackValue = 0;
+                            let fallbackEntry = null;
+
+                            for (let f = 0; f < CompleteNetworkList_weighted.length; f++) {
+                                if (CompleteNetworkList_weighted[f].value > fallbackValue) {
+                                    fallbackValue = CompleteNetworkList_weighted[f].value;
+                                    fallbackEntry = CompleteNetworkList_weighted[f];
+                                }
+                            }
+
+                            if (fallbackEntry) {
+                                CurrentNetworkList_weighted.push(fallbackEntry);
+                            }
+                        }
                         LinesInSearch = false;
                     }
                 }
@@ -260,6 +282,15 @@ async function calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGe
             TestOutputFeature = turf.featureCollection(TestOutput)
             await AddGeoJsonFeatureToMap_EntireNetwork(TestOutputFeature);
             */
+
+            if (!BestPath || BestValue === 0) {
+                if (CompleteNetworkList_weighted.length > 0) {
+                    BestPath = CompleteNetworkList_weighted[0];
+                } else {
+                    Traversing = false;
+                    break;
+                }
+            }
 
             RunningLength = RunningLength + turf.length(BestPath.data, { units: 'kilometers' }) * 1000;
 
