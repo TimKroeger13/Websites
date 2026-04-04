@@ -19,11 +19,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 /* ── 3. Your merged tile overlay ────────────────────────────────── */
 L.tileLayer('tiles/{z}/{x}/{y}.png', {
-  opacity:     1,
-  maxZoom:     18,
-  minZoom:     12,
-  tms:         false,   // XYZ scheme (standard from QGIS)
-  errorTileUrl: '',     // outside your tile extent → just show basemap
+  opacity:       1,
+  minZoom:       12,
+  maxZoom:       22,         // how far the map can zoom
+  maxNativeZoom: 18,         // tiles only exist up to 18 — scale them up beyond that
+  tms:           false,      // XYZ scheme (standard from QGIS)
+  errorTileUrl:  '',         // outside tile extent → basemap shows through
 }).addTo(map);
 
 
