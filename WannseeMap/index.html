@@ -4,44 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Map Viewer</title>
-
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <div id="map"></div>
 
-  <!-- GPS Status Overlay -->
   <div id="gps-status" class="gps-status hidden">
     <span id="gps-status-text"></span>
   </div>
 
-  <!-- GPS Reconnect Button (bottom-left spark button) -->
-  <button id="gps-btn" title="Reconnect GPS">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Lightning bolt / spark icon -->
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-    </svg>
-  </button>
+  <button id="gps-btn" title="Reconnect GPS">GPS Reconnect</button>
 
-  <!-- Leaflet JS -->
+  <!-- Only Leaflet needed now — no georaster, no proj4 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- proj4 for CRS reprojection (required by georaster for non-4326 files) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-
-  <!-- georaster core parser -->
-  <script src="https://unpkg.com/georaster"></script>
-
-  <!-- georaster-layer-for-leaflet -->
-  <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
-
-  <!-- Application JS -->
   <script src="map.js"></script>
 
 </body>
