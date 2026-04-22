@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOCUS — Time Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #06060a;
+  --surface: #212124;
+  --surface2: #2c2c31;
+  --border: #5f4c20;
+  --border-light: #5f4c20;
+  --gold: #d4ab49;
+  --gold-light: #e8b84b;
+  --gold-dim: #7a5c20;
+  --gold-glow: rgba(196,150,60,0.12);
+  --text: #eeeae0;
+  --text-muted: #f8d58e;
+  --text-dim: #fdfdfd;
+  --success: #4ecb82;
+  --danger: #e05555;
+  --blue: #4a80c4;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.5;
+}
+
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.header-brand { display: flex; align-items: center; gap: 10px; }
+.brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-dim);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.brand-dot.active {
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%,100% { box-shadow: 0 0 8px var(--gold); }
+  50% { box-shadow: 0 0 18px var(--gold-light), 0 0 6px var(--gold); }
+}
+.brand-name {
+  font-weight: 800; font-size: 14px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+}
+.header-right { display: flex; align-items: center; gap: 20px; }
+.live-clock {
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  color: var(--text-muted); letter-spacing: 0.06em;
+}
+.goal-btn {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-muted); background: none;
+  border: 1px solid var(--border); padding: 5px 12px;
+  border-radius: 4px; cursor: pointer; letter-spacing: 0.07em;
+  text-transform: uppercase; transition: all 0.2s;
+}
+.goal-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+/* ── Main ── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Timer Panel ── */
+.timer-panel {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 32px; gap: 18px;
+  border-right: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.timer-panel::before {
+  content: '';
+  position: absolute; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,150,60,0.045) 0%, transparent 65%);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.6s;
+}
+.timer-panel.running::before {
+  opacity: 1;
+  animation: ambient-glow 4s ease-in-out infinite;
+}
+@keyframes ambient-glow {
+  0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%,-50%) scale(1.08); opacity: 0.5; }
+}
+
+/* Task input */
+.task-wrapper { width: 100%; max-width: 420px; }
+.field-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 7px;
+}
+.task-input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 11px 15px;
+  font-family: 'Syne', sans-serif; font-size: 14px;
+  font-weight: 600; color: var(--text); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.01em;
+}
+.task-input::placeholder { color: var(--text-dim); font-weight: 400; }
+.task-input:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 3px rgba(196,150,60,0.07);
+}
+
+/* ── PRIMARY MODE TABS — FOCUS / FLOW / MANUAL ── */
+.primary-tabs {
+  display: flex; gap: 6px;
+  background: var(--surface2); padding: 5px;
+  border-radius: 10px; border: 1px solid var(--border);
+  position: relative;
+}
+.primary-tabs.locked { opacity: 0.45; cursor: not-allowed; }
+.primary-tabs.locked .primary-tab { pointer-events: none; }
+.tabs-lock-tip {
+  position: absolute; inset: 0;
+  border-radius: 9px;
+  display: none; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em;
+  color: var(--text-muted);
+  background: rgba(33,33,36,0.9);
+  backdrop-filter: blur(2px);
+  z-index: 2; opacity: 0;
+  transition: opacity 0.2s;
+  border: 1px solid var(--border);
+}
+.primary-tabs.locked:hover .tabs-lock-tip { display: flex; opacity: 1; }
+.primary-tab {
+  padding: 10px 26px; border-radius: 7px;
+  font-family: 'Syne', sans-serif; font-size: 12px;
+  font-weight: 700; letter-spacing: 0.14em;
+  color: var(--text-muted);
+  cursor: pointer; background: none; border: none;
+  transition: all 0.2s; text-transform: uppercase; white-space: nowrap;
+}
+.primary-tab:hover { color: var(--text); }
+.primary-tab.active {
+  background: var(--bg); color: var(--gold);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+
+/* Secondary tabs — Focus durations */
+.focus-sub-tabs {
+  display: flex; gap: 4px;
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height 0.3s, opacity 0.3s, margin-top 0.3s;
+  margin-top: 0;
+}
+.focus-sub-tabs.visible { max-height: 48px; opacity: 1; margin-top: 8px; }
+.sub-tab {
+  padding: 5px 14px; border-radius: 5px;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  font-weight: 500; letter-spacing: 0.09em; color: var(--text-muted);
+  cursor: pointer; background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: all 0.2s; text-transform: uppercase; white-space: nowrap;
+}
+.sub-tab:hover { color: var(--text); border-color: var(--gold-dim); }
+.sub-tab.active {
+  background: var(--bg); color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
+.custom-row {
+  display: flex; align-items: center; gap: 8px;
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height 0.3s, opacity 0.3s, margin-top 0.3s;
+  margin-top: 0;
+}
+.custom-row.visible { max-height: 48px; opacity: 1; margin-top: 8px; }
+.custom-num {
+  width: 72px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 8px; font-family: 'DM Mono', monospace;
+  font-size: 14px; color: var(--text); outline: none;
+  text-align: center; transition: border-color 0.2s;
+}
+.custom-num:focus { border-color: var(--gold-dim); }
+.custom-lbl {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-muted); letter-spacing: 0.07em;
+}
+.btn-custom-set {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 12px;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+  letter-spacing: 0.06em;
+}
+.btn-custom-set:hover:not(:disabled) { border-color: var(--gold-dim); color: var(--gold); }
+.btn-custom-set:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Timer Stage (Focus/Flow) ── */
+.timer-stage {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  width: 100%;
+}
+.timer-stage.hidden { display: none; }
+
+.timer-container {
+  position: relative; width: 300px; height: 300px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.timer-svg {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  transform: rotate(-90deg);
+}
+.ring-bg { fill: none; stroke: var(--surface2); stroke-width: 2; }
+.ring-prog {
+  fill: none; stroke: var(--gold); stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 879.6;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.55s ease, stroke 0.4s;
+  filter: drop-shadow(0 0 7px rgba(196,150,60,0.55));
+}
+.ring-prog.warning {
+  stroke: var(--danger);
+  filter: drop-shadow(0 0 7px rgba(224,85,85,0.55));
+}
+.timer-inner {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px; z-index: 1;
+}
+.timer-digits {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 82px; line-height: 1;
+  letter-spacing: 0.05em; color: var(--text);
+  user-select: none;
+  transition: color 0.3s, text-shadow 0.5s;
+  text-shadow: 0 0 60px rgba(196,150,60,0);
+}
+.timer-panel.running .timer-digits {
+  text-shadow: 0 0 60px rgba(196,150,60,0.12);
+}
+.timer-digits.warning { color: var(--danger); }
+.timer-mode-lbl {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.timer-sub {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); letter-spacing: 0.07em;
+  transition: opacity 0.3s;
+}
+
+/* Controls */
+.controls { display: flex; align-items: center; gap: 12px; }
+.btn-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-icon:hover:not(:disabled) { border-color: var(--border-light); color: var(--text); }
+.btn-icon.done:hover:not(:disabled) {
+  background: rgba(78,203,130,0.1);
+  border-color: rgba(78,203,130,0.4); color: var(--success);
+}
+.btn-icon:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+.btn-main {
+  width: 130px; height: 50px; border-radius: 7px;
+  background: var(--gold); border: none;
+  color: #000; font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 13px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 22px rgba(196,150,60,0.28);
+  position: relative; overflow: hidden;
+}
+.btn-main::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg,rgba(255,255,255,0.12) 0%,transparent 55%);
+  pointer-events: none;
+}
+.btn-main:hover {
+  background: var(--gold-light);
+  box-shadow: 0 6px 32px rgba(196,150,60,0.42);
+  transform: translateY(-1px);
+}
+.btn-main:active { transform: translateY(0); }
+.btn-main.paused {
+  background: transparent;
+  border: 1.5px solid var(--gold-dim);
+  color: var(--gold); box-shadow: none;
+}
+.btn-main.paused:hover {
+  background: var(--gold-glow);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+/* ── Manual Entry Stage ── */
+.manual-stage {
+  display: none; flex-direction: column;
+  align-items: center; gap: 18px;
+  width: 100%; max-width: 420px;
+}
+.manual-stage.active { display: flex; }
+.manual-header { text-align: center; }
+.manual-title {
+  font-family: 'Bebas Neue', cursive; font-size: 36px;
+  letter-spacing: 0.08em; color: var(--text); line-height: 1;
+  margin-bottom: 6px;
+}
+.manual-sub {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-muted); letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.manual-form {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.form-row { display: flex; flex-direction: column; gap: 7px; }
+.form-row-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-input {
+  background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 13px;
+  font-family: 'Syne', sans-serif; font-size: 14px;
+  color: var(--text); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input[type="number"], .form-input[type="time"] {
+  font-family: 'DM Mono', monospace; letter-spacing: 0.05em;
+}
+.form-input:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 3px rgba(196,150,60,0.07);
+}
+.form-input::placeholder { color: var(--text-dim); }
+.form-input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6); opacity: 0.6; cursor: pointer;
+}
+
+.btn-submit {
+  width: 100%; background: var(--gold); border: none;
+  border-radius: 6px; padding: 13px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 13px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #000; cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 22px rgba(196,150,60,0.28);
+}
+.btn-submit:hover {
+  background: var(--gold-light);
+  box-shadow: 0 6px 32px rgba(196,150,60,0.42);
+  transform: translateY(-1px);
+}
+
+.manual-hint {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); text-align: center;
+  letter-spacing: 0.06em; line-height: 1.6;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 350px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--surface);
+}
+.sidebar-block {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.s-title {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.goal-row { display: flex; align-items: center; gap: 18px; }
+.goal-arc-wrap {
+  position: relative; width: 76px; height: 76px; flex-shrink: 0;
+}
+.goal-arc-svg { width: 76px; height: 76px; transform: rotate(-90deg); }
+.g-track { fill: none; stroke: var(--surface2); stroke-width: 5; }
+.g-fill {
+  fill: none; stroke: var(--gold); stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 188.5; stroke-dashoffset: 188.5;
+  transition: stroke-dashoffset 0.7s ease;
+  filter: drop-shadow(0 0 4px rgba(196,150,60,0.4));
+}
+.goal-pct-wrap {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); text-align: center;
+}
+.goal-pct-num {
+  font-family: 'Bebas Neue', cursive; font-size: 22px;
+  line-height: 1; color: var(--text);
+}
+.goal-pct-sym {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--text-muted);
+}
+.goal-info { flex: 1; }
+.goal-time-big {
+  font-family: 'Bebas Neue', cursive; font-size: 30px;
+  line-height: 1; color: var(--text); letter-spacing: 0.04em;
+}
+.goal-time-sub {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-muted); letter-spacing: 0.06em; margin-top: 2px;
+}
+.goal-bar-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.goal-bar-track {
+  flex: 1; height: 2px; background: var(--surface2);
+  border-radius: 2px; overflow: hidden;
+}
+.goal-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  border-radius: 2px; transition: width 0.7s ease;
+}
+.goal-bar-lbl {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); white-space: nowrap;
+}
+.stats-row { display: flex; gap: 8px; margin-top: 14px; }
+.stat-card {
+  flex: 1; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 9px 10px; text-align: center;
+}
+.stat-val {
+  font-family: 'Bebas Neue', cursive; font-size: 22px;
+  line-height: 1; color: var(--gold);
+}
+.stat-lbl {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--text-dim); letter-spacing: 0.08em;
+  margin-top: 2px; text-transform: uppercase;
+}
+
+/* Sessions */
+.sessions-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px 0;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted);
+}
+.btn-clear {
+  background: none; border: none;
+  color: var(--text-dim); font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; cursor: pointer;
+  transition: color 0.2s;
+}
+.btn-clear:hover { color: var(--danger); }
+.sessions-list {
+  flex: 1; overflow-y: auto; padding: 10px 22px 0;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.sessions-list::-webkit-scrollbar { width: 3px; }
+.sessions-list::-webkit-scrollbar-track { background: transparent; }
+.sessions-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.empty-state { text-align: center; padding: 36px 0; }
+.empty-icon { font-size: 28px; opacity: 0.3; margin-bottom: 10px; }
+.empty-text {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-dim); letter-spacing: 0.05em; line-height: 1.7;
+}
+.session-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px;
+  margin-bottom: 7px; display: flex; align-items: center; gap: 10px;
+  animation: slide-in 0.28s ease;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+}
+.session-card:hover {
+  border-color: var(--gold-dim);
+  background: #34343a;
+}
+.session-card:active { transform: scale(0.99); }
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.s-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+}
+.s-dot.manual { background: var(--blue); }
+.s-info { flex: 1; min-width: 0; }
+.s-name {
+  font-family: 'Syne', sans-serif; font-size: 12px;
+  font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.s-time {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-muted); letter-spacing: 0.03em; margin-top: 1px;
+}
+.s-dur {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--gold-dim); flex-shrink: 0; font-weight: 500;
+}
+
+/* Quote */
+.quote-block {
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  margin-top: auto; flex-shrink: 0;
+}
+.quote-txt {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 500; color: var(--text-muted);
+  line-height: 1.65; font-style: italic;
+  transition: opacity 0.5s;
+}
+.quote-auth {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); margin-top: 5px; letter-spacing: 0.06em;
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex; align-items: center; justify-content: center;
+  gap: 24px; padding: 9px 28px;
+  border-top: 1px solid var(--border); background: var(--surface);
+  flex-shrink: 0;
+}
+.shortcut {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); letter-spacing: 0.04em;
+}
+.key {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 3px; padding: 2px 5px; font-size: 9px;
+  color: var(--text-muted); min-width: 18px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  top: 80px; right: 28px;
+  background: var(--surface);
+  border: 1px solid var(--gold-dim);
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  padding: 13px 18px;
+  min-width: 240px; max-width: 340px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+  z-index: 950;
+  transform: translateX(380px);
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.32s;
+  pointer-events: none;
+}
+.toast.active { transform: translateX(0); opacity: 1; }
+.toast-icon {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 22px; color: var(--gold);
+  line-height: 1; flex-shrink: 0;
+}
+.toast-body { flex: 1; min-width: 0; }
+.toast-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--text); line-height: 1.3;
+}
+.toast-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+  letter-spacing: 0.04em; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Modal ── */
+.modal-bd {
+  position: fixed; inset: 0; background: rgba(6,6,10,0.82);
+  backdrop-filter: blur(3px);
+  z-index: 900; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-bd.active { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 12px; padding: 28px; width: 340px;
+  transform: scale(0.95) translateY(8px);
+  transition: transform 0.22s;
+}
+.modal-bd.active .modal { transform: scale(1) translateY(0); }
+.modal-title {
+  font-weight: 700; font-size: 16px; margin-bottom: 4px; color: var(--text);
+}
+.modal-sub {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text-muted); margin-bottom: 20px; letter-spacing: 0.05em;
+  line-height: 1.5;
+}
+.modal-inp {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 14px; font-family: 'Bebas Neue', cursive;
+  font-size: 36px; color: var(--text); outline: none;
+  text-align: center; transition: border-color 0.2s; margin-bottom: 14px;
+}
+.modal-inp:focus { border-color: var(--gold-dim); }
+.modal-hint {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--text-dim); text-align: center; margin-bottom: 16px;
+  letter-spacing: 0.06em;
+}
+.modal-save {
+  width: 100%; background: var(--gold); border: none;
+  border-radius: 6px; padding: 12px; font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 13px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #000; cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-save:hover { background: var(--gold-light); }
+
+.modal-actions {
+  display: flex; gap: 10px; margin-top: 6px;
+}
+.modal-btn-secondary {
+  flex: 1; background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted);
+  cursor: pointer; transition: all 0.2s;
+}
+.modal-btn-secondary:hover {
+  border-color: var(--danger); color: var(--danger);
+}
+.modal-btn-primary {
+  flex: 2; background: var(--gold); border: none;
+  border-radius: 6px; padding: 12px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #000; cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-btn-primary:hover { background: var(--gold-light); }
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-dot" id="brandDot"></div>
+    <span class="brand-name">Focus</span>
+  </div>
+  <div class="header-right">
+    <span class="live-clock" id="liveClock">--:--:--</span>
+    <button class="goal-btn" id="goalBtn">⚑ Daily Goal</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <section class="timer-panel" id="timerPanel">
+
+    <div class="task-wrapper" id="taskWrapper">
+      <div class="field-label">Current Task</div>
+      <input class="task-input" id="taskInput"
+        type="text" placeholder="What are you working on?"
+        maxlength="80" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div>
+      <div class="primary-tabs" id="primaryTabs">
+        <button class="primary-tab" data-primary="focus">Focus</button>
+        <button class="primary-tab active" data-primary="flow">Flow</button>
+        <button class="primary-tab" data-primary="manual">Manual</button>
+        <div class="tabs-lock-tip">⏸ PAUSE TO SWITCH MODE</div>
+      </div>
+
+      <div class="focus-sub-tabs" id="focusSubTabs">
+        <button class="sub-tab active" data-focus="25">25 MIN</button>
+        <button class="sub-tab" data-focus="50">50 MIN</button>
+        <button class="sub-tab" data-focus="90">90 MIN</button>
+        <button class="sub-tab" data-focus="custom">CUSTOM</button>
+      </div>
+      <div class="custom-row" id="customRow">
+        <input class="custom-num" id="customMins" type="number"
+          value="45" min="1" max="480" placeholder="45">
+        <span class="custom-lbl">MINUTES</span>
+        <button class="btn-custom-set" id="customSetBtn">SET</button>
+      </div>
+    </div>
+
+    <!-- STAGE A: Timer (Focus / Flow) -->
+    <div class="timer-stage" id="timerStage">
+      <div class="timer-container">
+        <svg class="timer-svg" viewBox="0 0 300 300">
+          <g id="tickMarks"></g>
+          <circle class="ring-bg" cx="150" cy="150" r="130"/>
+          <circle class="ring-prog" id="ringProg" cx="150" cy="150" r="130"/>
+        </svg>
+        <div class="timer-inner">
+          <div class="timer-digits" id="timerDigits">00:00</div>
+          <div class="timer-mode-lbl" id="timerModeLbl">FLOW TIMER</div>
+          <div class="timer-sub" id="timerSub">· · ·</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn-icon" id="btnReset" title="Reset (R)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8a6 6 0 1 1 1.2 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M2 11.5V8H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="btn-main" id="btnStart">START</button>
+        <button class="btn-icon done" id="btnDone" title="Mark Done (Enter)">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3.5 9.5L7 13L14.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE B: Manual Entry -->
+    <div class="manual-stage" id="manualStage">
+      <div class="manual-header">
+        <div class="manual-title">LOG A SESSION</div>
+        <div class="manual-sub">ADD OR BACKFILL TIME YOU WORKED</div>
+      </div>
+      <div class="manual-form">
+        <div class="form-row">
+          <div class="field-label">Task</div>
+          <input class="form-input" id="manualTask" type="text"
+            placeholder="What did you work on?" maxlength="80" autocomplete="off">
+        </div>
+        <div class="form-row-split">
+          <div class="form-row">
+            <div class="field-label">Duration (minutes)</div>
+            <input class="form-input" id="manualMins" type="number"
+              placeholder="30" min="1" max="1440">
+          </div>
+          <div class="form-row">
+            <div class="field-label">Time of day</div>
+            <input class="form-input" id="manualTime" type="time">
+          </div>
+        </div>
+        <button class="btn-submit" id="manualAddBtn">Add Entry</button>
+      </div>
+      <div class="manual-hint">
+        Use this to log sessions you forgot to track,<br>
+        or fix an over-run timer by clicking the entry in the list.
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-block">
+      <div class="s-title">
+        <span>Daily Goal</span>
+        <span id="goalDisplay" style="color:var(--gold);font-size:9px;">0m / 2h</span>
+      </div>
+      <div class="goal-row">
+        <div class="goal-arc-wrap">
+          <svg class="goal-arc-svg" viewBox="0 0 76 76">
+            <circle class="g-track" cx="38" cy="38" r="30"/>
+            <circle class="g-fill" id="goalArc" cx="38" cy="38" r="30"/>
+          </svg>
+          <div class="goal-pct-wrap">
+            <div class="goal-pct-num" id="goalPct">0</div>
+            <div class="goal-pct-sym">%</div>
+          </div>
+        </div>
+        <div class="goal-info">
+          <div class="goal-time-big" id="goalTimeBig">0:00</div>
+          <div class="goal-time-sub">HOURS FOCUSED TODAY</div>
+          <div class="goal-bar-row">
+            <div class="goal-bar-track">
+              <div class="goal-bar-fill" id="goalBarFill" style="width:0%"></div>
+            </div>
+            <span class="goal-bar-lbl" id="goalBarLbl">GOAL: 2H</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="statN">0</div>
+          <div class="stat-lbl">Sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statAvg">—</div>
+          <div class="stat-lbl">Avg Min</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statBest">—</div>
+          <div class="stat-lbl">Best Min</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sessions-header">
+      <span>Today's Sessions</span>
+      <button class="btn-clear" id="btnClear">Clear</button>
+    </div>
+    <div class="sessions-list" id="sessionsList">
+      <div class="empty-state">
+        <div class="empty-icon">◎</div>
+        <div class="empty-text">No sessions yet.<br>Start tracking or add one manually.</div>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      <div class="quote-txt" id="quoteTxt">"The secret of getting ahead is getting started."</div>
+      <div class="quote-auth" id="quoteAuth">— Mark Twain</div>
+    </div>
+
+  </aside>
+
+</main>
+
+<footer class="footer">
+  <div class="shortcut"><kbd class="key">Space</kbd> Start / Pause</div>
+  <div class="shortcut"><kbd class="key">R</kbd> Reset</div>
+  <div class="shortcut"><kbd class="key">Enter</kbd> Done</div>
+  <div class="shortcut"><kbd class="key">1</kbd><kbd class="key">2</kbd><kbd class="key">3</kbd> Mode</div>
+  <div class="shortcut"><kbd class="key">G</kbd> Goal</div>
+</footer>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toastIcon">✓</div>
+  <div class="toast-body">
+    <div class="toast-text" id="toastText">Logged</div>
+    <div class="toast-sub" id="toastSub"></div>
+  </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal-bd" id="modalBd">
+  <div class="modal">
+    <div class="modal-title">Set Daily Goal</div>
+    <div class="modal-sub">HOW MANY MINUTES DO YOU WANT TO FOCUS TODAY?</div>
+    <input class="modal-inp" id="modalInp" type="number" value="120" min="15" max="720">
+    <div class="modal-hint">15 – 720 minutes</div>
+    <button class="modal-save" id="modalSave">Save Goal</button>
+  </div>
+</div>
+
+<!-- Edit Session Modal -->
+<div class="modal-bd" id="editBd">
+  <div class="modal">
+    <div class="modal-title">Edit Session</div>
+    <div class="modal-sub">ADJUST NAME, DURATION OR TIME</div>
+    <div class="manual-form" style="padding:0;background:transparent;border:none;">
+      <div class="form-row">
+        <div class="field-label">Task</div>
+        <input class="form-input" id="editTask" type="text" maxlength="80">
+      </div>
+      <div class="form-row-split">
+        <div class="form-row">
+          <div class="field-label">Duration (min)</div>
+          <input class="form-input" id="editMins" type="number" min="1" max="1440">
+        </div>
+        <div class="form-row">
+          <div class="field-label">Time</div>
+          <input class="form-input" id="editTime" type="time">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn-secondary" id="editDelete">Delete</button>
+        <button class="modal-btn-primary" id="editSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const RING_C = 879.6;
+const GOAL_C = 188.5;
+
+const FOCUS_DURATIONS = {
+  '25':     { label: 'FOCUS · 25 MIN', minutes: 25 },
+  '50':     { label: 'FOCUS · 50 MIN', minutes: 50 },
+  '90':     { label: 'FOCUS · 90 MIN', minutes: 90 },
+  'custom': { label: 'FOCUS · CUSTOM', minutes: null },
+};
+
+const QUOTES = [
+  { t: "The secret of getting ahead is getting started.", a: "Mark Twain" },
+  { t: "Focus is a matter of deciding what things you're not going to do.", a: "John Carmack" },
+  { t: "Deep work is the ability to focus without distraction on a cognitively demanding task.", a: "Cal Newport" },
+  { t: "The successful warrior is the average man, with laser-like focus.", a: "Bruce Lee" },
+  { t: "Energy and persistence conquer all things.", a: "Benjamin Franklin" },
+  { t: "Clarity about what matters provides clarity about what does not.", a: "Cal Newport" },
+  { t: "The key is not to prioritize what's on your schedule, but to schedule your priorities.", a: "Stephen Covey" },
+  { t: "Where focus goes, energy flows.", a: "Tony Robbins" },
+  { t: "To do two things at once is to do neither.", a: "Publilius Syrus" },
+  { t: "It is not enough to be busy. What are we busy about?", a: "Henry David Thoreau" },
+  { t: "Very successful people say no to almost everything.", a: "Warren Buffett" },
+  { t: "Action is the foundational key to all success.", a: "Pablo Picasso" },
+  { t: "One reason so few of us achieve what we truly want is that we never direct our focus.", a: "Tony Robbins" },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+// primaryMode: 'focus' | 'flow' | 'manual'
+let S = {
+  primaryMode: 'flow',   // DEFAULT: Flow (user's primary use case)
+  focusSub: '25',
+  durSec: 25 * 60,
+  remSec: 25 * 60,
+  elaSec: 0,
+  isRunning: false,
+  isStopwatch: true,
+  iv: null,
+  sessions: [],
+  goalMins: 120,
+  wallStart: null,
+  wallElaBase: 0,
+  goalHitToday: false,
+};
+
+// Load saved data (today only)
+try {
+  const raw = localStorage.getItem('focus_v3') || localStorage.getItem('focus_v2');
+  if (raw) {
+    const d = JSON.parse(raw);
+    const today = new Date().toDateString();
+    S.sessions = (d.sessions || []).filter(s => new Date(s.ts).toDateString() === today);
+    S.goalMins = d.goalMins || 120;
+  }
+} catch(e) {}
+
+// ─── DOM ──────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const el = {
+  dot: $('brandDot'), clock: $('liveClock'), goalBtn: $('goalBtn'),
+  panel: $('timerPanel'),
+  taskWrapper: $('taskWrapper'), taskIn: $('taskInput'),
+  primaryTabs: $('primaryTabs'),
+  focusSubTabs: $('focusSubTabs'),
+  customRow: $('customRow'),
+  customMins: $('customMins'), customSet: $('customSetBtn'),
+  timerStage: $('timerStage'), manualStage: $('manualStage'),
+  ring: $('ringProg'), digits: $('timerDigits'),
+  modeLbl: $('timerModeLbl'), sub: $('timerSub'),
+  btnReset: $('btnReset'), btnStart: $('btnStart'), btnDone: $('btnDone'),
+  manualTask: $('manualTask'), manualMins: $('manualMins'),
+  manualTime: $('manualTime'), manualAddBtn: $('manualAddBtn'),
+  goalArc: $('goalArc'), goalPct: $('goalPct'),
+  goalBig: $('goalTimeBig'), goalBar: $('goalBarFill'),
+  goalBarLbl: $('goalBarLbl'), goalDisp: $('goalDisplay'),
+  statN: $('statN'), statAvg: $('statAvg'), statBest: $('statBest'),
+  list: $('sessionsList'), clearBtn: $('btnClear'),
+  quoteTxt: $('quoteTxt'), quoteAuth: $('quoteAuth'),
+  toast: $('toast'), toastIcon: $('toastIcon'),
+  toastText: $('toastText'), toastSub: $('toastSub'),
+  modalBd: $('modalBd'), modalInp: $('modalInp'), modalSave: $('modalSave'),
+  editBd: $('editBd'), editTask: $('editTask'), editMins: $('editMins'),
+  editTime: $('editTime'), editSave: $('editSave'), editDelete: $('editDelete'),
+};
+
+// ─── Audio — dramatically reduced per user feedback ───────────────────────────
+// Sound policy:
+//   • FLOW mode: completely silent
+//   • FOCUS mode: single heads-up chime at T-60s + soft tick each of the last 10s + gentle completion chime
+//   • No button click sounds anywhere
+let actx = null;
+function getActx() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone(freq, type='sine', dur=0.15, vol=0.1, delay=0) {
+  try {
+    const ctx = getActx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type; o.frequency.value = freq;
+    const t = ctx.currentTime + delay;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur);
+  } catch(e) {}
+}
+function playTick()    { tone(660, 'sine', 0.05, 0.035); }   // last-10s countdown
+function playHeadsUp() { tone(520, 'sine', 0.22, 0.06); }     // single chime at T-60
+function playWin()     { tone(523,'sine',0.3,0.07); tone(784,'sine',0.45,0.07,0.12); } // gentle 2-note
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(text, sub = '', icon = '✓', duration = 3200) {
+  el.toastIcon.textContent = icon;
+  el.toastText.textContent = text;
+  el.toastSub.textContent = sub;
+  el.toast.classList.add('active');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.remove('active'), duration);
+}
+
+// ─── Primary Mode Switching ───────────────────────────────────────────────────
+function setPrimaryMode(mode) {
+  if (S.isRunning) return;
+
+  S.primaryMode = mode;
+  S.isStopwatch = (mode === 'flow');
+
+  el.primaryTabs.querySelectorAll('.primary-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.primary === mode));
+
+  const isFocus = mode === 'focus';
+  el.focusSubTabs.classList.toggle('visible', isFocus);
+  el.customRow.classList.toggle('visible', isFocus && S.focusSub === 'custom');
+
+  const isManual = mode === 'manual';
+  el.timerStage.classList.toggle('hidden', isManual);
+  el.manualStage.classList.toggle('active', isManual);
+  el.taskWrapper.style.display = isManual ? 'none' : '';
+
+  if (isManual) {
+    stopInternal();
+    resetManualForm();
+    setTimeout(() => el.manualTask.focus(), 50);
+  } else {
+    if (isFocus) {
+      applyFocusDuration();
+    } else {
+      // Flow mode — stopwatch
+      S.durSec = 0;
+      S.remSec = 0;
+    }
+    S.elaSec = 0;
+    S.wallElaBase = 0;
+    S.wallStart = null;
+    updateModeLabel();
+    render();
+    updateBtn();
+    updateDoneBtn();
+  }
+}
+
+function setFocusDuration(sub) {
+  if (S.isRunning) return;
+  S.focusSub = sub;
+  el.focusSubTabs.querySelectorAll('.sub-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.focus === sub));
+  el.customRow.classList.toggle('visible', sub === 'custom');
+  applyFocusDuration();
+  S.elaSec = 0;
+  S.wallElaBase = 0;
+  S.wallStart = null;
+  updateModeLabel();
+  render();
+  updateBtn();
+  updateDoneBtn();
+}
+
+function applyFocusDuration() {
+  if (S.focusSub === 'custom') {
+    const m = Math.max(1, Math.min(480, parseInt(el.customMins.value) || 45));
+    S.durSec = m * 60;
+  } else {
+    S.durSec = FOCUS_DURATIONS[S.focusSub].minutes * 60;
+  }
+  S.remSec = S.durSec;
+}
+
+function updateModeLabel() {
+  if (S.primaryMode === 'flow') {
+    el.modeLbl.textContent = 'FLOW TIMER';
+  } else if (S.primaryMode === 'focus') {
+    if (S.focusSub === 'custom') {
+      const mins = Math.round(S.durSec / 60);
+      el.modeLbl.textContent = `FOCUS · ${mins} MIN`;
+    } else {
+      el.modeLbl.textContent = FOCUS_DURATIONS[S.focusSub].label;
+    }
+  }
+}
+
+// ─── Timer Logic ──────────────────────────────────────────────────────────────
+function toggle() {
+  if (S.primaryMode === 'manual') return;
+  S.isRunning ? pause() : start();
+}
+
+function wallElapsed() {
+  if (!S.wallStart) return S.wallElaBase;
+  return S.wallElaBase + Math.floor((Date.now() - S.wallStart) / 1000);
+}
+
+function tickFrame() {
+  const ela = wallElapsed();
+  const prevEla = S.elaSec;
+  S.elaSec = ela;
+
+  if (S.isStopwatch) {
+    // FLOW — completely silent, no minute ticks
+    render();
+  } else {
+    const rem = Math.max(0, S.durSec - ela);
+    const prevRem = S.remSec;
+    S.remSec = rem;
+    render();
+
+    const warn = rem <= 10 && rem > 0;
+    el.digits.classList.toggle('warning', warn);
+    el.ring.classList.toggle('warning', warn);
+
+    // Sound only in last minute
+    if (warn && Math.floor(prevRem) !== Math.floor(rem)) {
+      playTick();
+    }
+    if (prevRem > 60 && rem <= 60 && S.durSec > 60) {
+      playHeadsUp();
+    }
+
+    if (rem === 0 && prevRem > 0) onComplete();
+  }
+}
+
+function start() {
+  if (S.isRunning) return;
+  S.isRunning = true;
+  S.wallStart = Date.now();
+  el.panel.classList.add('running');
+  el.dot.classList.add('active');
+  el.primaryTabs.classList.add('locked');
+  el.customSet.disabled = true;
+  updateBtn();
+  updateDoneBtn();
+  S.iv = setInterval(tickFrame, 500);
+}
+
+function pause() {
+  if (!S.isRunning) return;
+  S.wallElaBase = wallElapsed();
+  S.wallStart = null;
+  S.isRunning = false;
+  el.panel.classList.remove('running');
+  el.dot.classList.remove('active');
+  el.primaryTabs.classList.remove('locked');
+  el.customSet.disabled = false;
+  clearInterval(S.iv); S.iv = null;
+  updateBtn();
+  updateDoneBtn();
+  updateTabTitle();
+}
+
+function stop() {
+  if (S.primaryMode === 'manual') return;
+  pause();
+  stopInternal();
+}
+
+function stopInternal() {
+  S.remSec = S.durSec;
+  S.elaSec = 0;
+  S.wallElaBase = 0;
+  S.wallStart = null;
+  el.digits.classList.remove('warning');
+  el.ring.classList.remove('warning');
+  render();
+  updateDoneBtn();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && S.isRunning) tickFrame();
+});
+
+function onComplete() {
+  pause();
+  el.digits.classList.remove('warning');
+  el.ring.classList.remove('warning');
+  const mins = S.isStopwatch
+    ? Math.round(S.elaSec / 60)
+    : Math.round(S.durSec / 60);
+  if (mins < 1) return;
+  finishSession(mins);
+}
+
+function markDone() {
+  if (S.primaryMode === 'manual') return;
+  if (!S.isRunning && S.elaSec === 0) return;
+  const mins = S.isStopwatch
+    ? Math.round(S.elaSec / 60)
+    : Math.round((S.durSec - S.remSec) / 60);
+  if (mins < 1) { pause(); stopInternal(); return; }
+  pause();
+  finishSession(mins);
+}
+
+// finishSession — logs session, shows subtle toast (no reward language)
+function finishSession(mins) {
+  const name = el.taskIn.value.trim() || 'Untitled Session';
+  const prevTotal = totalMinutesToday();
+  S.sessions.unshift({
+    id: Date.now(),
+    name,
+    mins,
+    ts: new Date().toISOString(),
+    source: S.isStopwatch ? 'flow' : 'focus',
+  });
+  sortSessions();
+  save();
+  renderSessions();
+  updateStats();
+  updateGoalLive();
+  playWin();
+
+  toast('Logged', `${mins}m · ${name}`, '✓');
+
+  const newTotal = totalMinutesToday();
+  if (prevTotal < S.goalMins && newTotal >= S.goalMins && !S.goalHitToday) {
+    S.goalHitToday = true;
+    setTimeout(() => toast('Daily goal reached', `${fmtMins(newTotal)} of ${fmtMins(S.goalMins)}`, '◉', 4000), 800);
+  }
+
+  setTimeout(() => {
+    S.elaSec = 0; S.remSec = S.durSec;
+    S.wallElaBase = 0; S.wallStart = null;
+    render(); updateBtn(); updateDoneBtn();
+  }, 300);
+}
+
+// ─── Manual Entry ─────────────────────────────────────────────────────────────
+function resetManualForm() {
+  el.manualTask.value = '';
+  el.manualMins.value = '';
+  const now = new Date();
+  el.manualTime.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+function addManualEntry() {
+  const name = el.manualTask.value.trim() || 'Untitled Session';
+  const mins = parseInt(el.manualMins.value);
+  const timeStr = el.manualTime.value;
+
+  if (!mins || mins < 1 || mins > 1440) {
+    toast('Enter duration', 'Minutes must be 1–1440', '!', 3000);
+    el.manualMins.focus();
+    return;
+  }
+  if (!timeStr) {
+    toast('Pick a time', 'Enter time of day', '!', 3000);
+    el.manualTime.focus();
+    return;
+  }
+
+  const [h, m] = timeStr.split(':').map(n => parseInt(n));
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+
+  const prevTotal = totalMinutesToday();
+  S.sessions.unshift({
+    id: Date.now(),
+    name,
+    mins,
+    ts: d.toISOString(),
+    source: 'manual',
+  });
+  sortSessions();
+  save();
+  renderSessions();
+  updateStats();
+  updateGoalLive();
+
+  toast('Entry added', `${mins}m · ${name}`, '+');
+
+  const newTotal = totalMinutesToday();
+  if (prevTotal < S.goalMins && newTotal >= S.goalMins && !S.goalHitToday) {
+    S.goalHitToday = true;
+    setTimeout(() => toast('Daily goal reached', `${fmtMins(newTotal)} of ${fmtMins(S.goalMins)}`, '◉', 4000), 800);
+  }
+
+  resetManualForm();
+  el.manualTask.focus();
+}
+
+// ─── Sort & Helpers ───────────────────────────────────────────────────────────
+function sortSessions() {
+  S.sessions.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+}
+
+function totalMinutesToday() {
+  return S.sessions.reduce((a, s) => a + s.mins, 0);
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function fmt(sec) {
+  if (sec < 0) sec = 0;
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+const pad = n => String(n).padStart(2,'0');
+
+function fmtMins(m) {
+  const h = Math.floor(m/60), r = m%60;
+  if (h > 0 && r > 0) return `${h}h ${r}m`;
+  if (h > 0) return `${h}h`;
+  return `${r}m`;
+}
+
+function render() {
+  if (S.primaryMode === 'manual') {
+    updateTabTitle();
+    updateGoalLive();
+    return;
+  }
+
+  if (S.isStopwatch) {
+    el.digits.textContent = fmt(S.elaSec);
+    el.sub.textContent = '· · ·';
+    const p = (S.elaSec % 3600) / 3600;
+    el.ring.style.strokeDashoffset = RING_C * (1 - p);
+  } else {
+    el.digits.textContent = fmt(S.remSec);
+    el.sub.textContent = S.elaSec > 0 ? `+${fmt(S.elaSec)} elapsed` : '· · ·';
+    const p = S.durSec > 0 ? S.remSec / S.durSec : 1;
+    el.ring.style.strokeDashoffset = RING_C * (1 - p);
+  }
+  updateTabTitle();
+  updateGoalLive();
+}
+
+function updateTabTitle() {
+  if (S.isRunning && S.primaryMode !== 'manual') {
+    const t = S.isStopwatch ? fmt(S.elaSec) : fmt(S.remSec);
+    document.title = t;
+  } else {
+    document.title = 'FOCUS — Time Tracker';
+  }
+}
+
+function updateGoalLive() {
+  const doneMin = totalMinutesToday();
+  const runMin  = Math.floor(S.elaSec / 60);
+  const total   = doneMin + runMin;
+  const pct     = Math.min(100, Math.round((total / S.goalMins) * 100));
+
+  el.goalArc.style.strokeDashoffset = GOAL_C * (1 - pct / 100);
+  el.goalPct.textContent = pct;
+  const h = Math.floor(total / 60), m = total % 60;
+  el.goalBig.textContent = `${h}:${pad(m)}`;
+  el.goalBar.style.width = `${pct}%`;
+  el.goalBarLbl.textContent = `GOAL: ${fmtMins(S.goalMins)}`;
+  el.goalDisp.textContent = `${fmtMins(total)} / ${fmtMins(S.goalMins)}`;
+}
+
+function updateBtn() {
+  if (S.isRunning) {
+    el.btnStart.textContent = 'PAUSE';
+    el.btnStart.classList.add('paused');
+  } else {
+    el.btnStart.textContent = S.elaSec > 0 ? 'RESUME' : 'START';
+    el.btnStart.classList.remove('paused');
+  }
+}
+
+function updateDoneBtn() {
+  el.btnDone.disabled = (!S.isRunning && S.elaSec === 0);
+}
+
+function updateStats() {
+  const n = S.sessions.length;
+  el.statN.textContent = n;
+  if (n === 0) { el.statAvg.textContent = '—'; el.statBest.textContent = '—'; return; }
+  el.statAvg.textContent = Math.round(S.sessions.reduce((a,s) => a+s.mins,0)/n);
+  el.statBest.textContent = Math.max(...S.sessions.map(s=>s.mins));
+}
+
+function renderSessions() {
+  if (S.sessions.length === 0) {
+    el.list.innerHTML = `<div class="empty-state"><div class="empty-icon">◎</div><div class="empty-text">No sessions yet.<br>Start tracking or add one manually.</div></div>`;
+    return;
+  }
+  el.list.innerHTML = S.sessions.map((s,i) => {
+    const d = new Date(s.ts);
+    const t = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const isManual = s.source === 'manual';
+    const srcLbl = isManual ? ' · manual' : '';
+    return `<div class="session-card" data-id="${s.id}" style="animation-delay:${i*0.04}s" title="Click to edit">
+      <div class="s-dot ${isManual ? 'manual' : ''}"></div>
+      <div class="s-info">
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-time">at ${t}${srcLbl}</div>
+      </div>
+      <div class="s-dur">${s.mins}m</div>
+    </div>`;
+  }).join('');
+
+  el.list.querySelectorAll('.session-card').forEach(card => {
+    card.addEventListener('click', () => openEditModal(parseInt(card.dataset.id)));
+  });
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Edit Session Modal ───────────────────────────────────────────────────────
+let editingId = null;
+
+function openEditModal(id) {
+  const s = S.sessions.find(x => x.id === id);
+  if (!s) return;
+  editingId = id;
+  el.editTask.value = s.name;
+  el.editMins.value = s.mins;
+  const d = new Date(s.ts);
+  el.editTime.value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  el.editBd.classList.add('active');
+  setTimeout(() => el.editTask.focus(), 80);
+}
+
+function closeEditModal() {
+  el.editBd.classList.remove('active');
+  editingId = null;
+}
+
+function saveEdit() {
+  if (editingId === null) return;
+  const s = S.sessions.find(x => x.id === editingId);
+  if (!s) { closeEditModal(); return; }
+
+  const name = el.editTask.value.trim() || 'Untitled Session';
+  const mins = parseInt(el.editMins.value);
+  const timeStr = el.editTime.value;
+
+  if (!mins || mins < 1 || mins > 1440) {
+    toast('Invalid duration', 'Minutes must be 1–1440', '!', 3000);
+    return;
+  }
+  if (!timeStr) {
+    toast('Invalid time', 'Please enter a time', '!', 3000);
+    return;
+  }
+
+  const [h, m] = timeStr.split(':').map(n => parseInt(n));
+  const d = new Date(s.ts);
+  d.setHours(h, m, 0, 0);
+
+  s.name = name;
+  s.mins = mins;
+  s.ts = d.toISOString();
+
+  sortSessions();
+  save();
+  renderSessions();
+  updateStats();
+  updateGoalLive();
+  closeEditModal();
+  toast('Entry updated', `${mins}m · ${name}`, '✎');
+}
+
+function deleteEdit() {
+  if (editingId === null) return;
+  const s = S.sessions.find(x => x.id === editingId);
+  if (!s) { closeEditModal(); return; }
+  if (!confirm(`Delete "${s.name}" (${s.mins}m)?`)) return;
+  S.sessions = S.sessions.filter(x => x.id !== editingId);
+  save();
+  renderSessions();
+  updateStats();
+  updateGoalLive();
+  closeEditModal();
+  toast('Entry deleted', s.name, '−');
+}
+
+// ─── Clock ────────────────────────────────────────────────────────────────────
+function tick() {
+  const n = new Date();
+  el.clock.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+}
+
+// ─── Goal Modal ───────────────────────────────────────────────────────────────
+function openGoal() {
+  el.modalInp.value = S.goalMins;
+  el.modalBd.classList.add('active');
+  setTimeout(()=>el.modalInp.focus(),80);
+}
+function closeGoal() { el.modalBd.classList.remove('active'); }
+function saveGoal() {
+  const v = parseInt(el.modalInp.value);
+  if (v>=15 && v<=720) {
+    S.goalMins = v;
+    S.goalHitToday = totalMinutesToday() >= v;
+    save();
+    updateGoalLive();
+  }
+  closeGoal();
+}
+
+// ─── Quotes ───────────────────────────────────────────────────────────────────
+let qi = Math.floor(Math.random()*QUOTES.length);
+function rotateQuote() {
+  qi = (qi+1)%QUOTES.length;
+  const q = QUOTES[qi];
+  el.quoteTxt.style.opacity = 0;
+  setTimeout(()=>{
+    el.quoteTxt.textContent = `"${q.t}"`;
+    el.quoteAuth.textContent = `— ${q.a}`;
+    el.quoteTxt.style.opacity = 1;
+  }, 500);
+}
+
+// ─── Tick Marks ───────────────────────────────────────────────────────────────
+function drawTicks() {
+  const g = $('tickMarks'), cx=150, cy=150, r=138, N=60;
+  for (let i=0;i<N;i++) {
+    const a = (i/N)*2*Math.PI-Math.PI/2;
+    const maj = i%5===0;
+    const r2 = r-(maj?10:5);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', cx+Math.cos(a)*r);
+    line.setAttribute('y1', cy+Math.sin(a)*r);
+    line.setAttribute('x2', cx+Math.cos(a)*r2);
+    line.setAttribute('y2', cy+Math.sin(a)*r2);
+    line.setAttribute('stroke', maj?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.025)');
+    line.setAttribute('stroke-width', maj?'1.5':'1');
+    line.setAttribute('stroke-linecap','round');
+    g.appendChild(line);
+  }
+}
+
+// ─── Persist ──────────────────────────────────────────────────────────────────
+function save() {
+  try {
+    localStorage.setItem('focus_v3', JSON.stringify({
+      sessions: S.sessions,
+      goalMins: S.goalMins
+    }));
+  } catch(e) {}
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+el.btnStart.addEventListener('click', toggle);
+el.btnReset.addEventListener('click', stop);
+el.btnDone.addEventListener('click', markDone);
+el.goalBtn.addEventListener('click', openGoal);
+el.modalSave.addEventListener('click', saveGoal);
+el.modalInp.addEventListener('keydown', e => { if(e.key==='Enter') saveGoal(); if(e.key==='Escape') closeGoal(); });
+el.modalBd.addEventListener('click', e => { if(e.target===el.modalBd) closeGoal(); });
+
+el.clearBtn.addEventListener('click',()=>{
+  if (S.sessions.length === 0) return;
+  if (!confirm('Clear today\'s sessions?')) return;
+  S.sessions=[];
+  S.goalHitToday = false;
+  save(); renderSessions(); updateGoalLive(); updateStats();
+});
+
+el.primaryTabs.querySelectorAll('.primary-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (S.isRunning) return;
+    setPrimaryMode(tab.dataset.primary);
+  });
+});
+
+el.focusSubTabs.querySelectorAll('.sub-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (S.isRunning) return;
+    setFocusDuration(tab.dataset.focus);
+  });
+});
+
+el.customSet.addEventListener('click',()=>{
+  if (S.primaryMode !== 'focus' || S.focusSub !== 'custom') return;
+  if (S.isRunning) return;
+  applyFocusDuration();
+  S.elaSec = 0;
+  S.wallElaBase = 0;
+  S.wallStart = null;
+  updateModeLabel();
+  render();
+});
+el.customMins.addEventListener('keydown', e => { if(e.key==='Enter') el.customSet.click(); });
+
+el.manualAddBtn.addEventListener('click', addManualEntry);
+el.manualTask.addEventListener('keydown', e => { if (e.key === 'Enter') el.manualMins.focus(); });
+el.manualMins.addEventListener('keydown', e => { if (e.key === 'Enter') el.manualTime.focus(); });
+el.manualTime.addEventListener('keydown', e => { if (e.key === 'Enter') addManualEntry(); });
+
+el.editSave.addEventListener('click', saveEdit);
+el.editDelete.addEventListener('click', deleteEdit);
+el.editBd.addEventListener('click', e => { if (e.target === el.editBd) closeEditModal(); });
+[el.editTask, el.editMins, el.editTime].forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') closeEditModal();
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+
+  if (e.key === 'Escape') {
+    if (el.editBd.classList.contains('active')) { closeEditModal(); return; }
+    if (el.modalBd.classList.contains('active')) { closeGoal(); return; }
+  }
+
+  switch(e.key) {
+    case ' ':
+      if (S.primaryMode === 'manual') return;
+      e.preventDefault(); toggle(); break;
+    case 'r': case 'R':
+      if (S.primaryMode === 'manual') return;
+      stop(); break;
+    case 'Enter':
+      if (S.primaryMode === 'manual') return;
+      e.preventDefault(); markDone(); break;
+    case '1': if (!S.isRunning) setPrimaryMode('focus'); break;
+    case '2': if (!S.isRunning) setPrimaryMode('flow'); break;
+    case '3': if (!S.isRunning) setPrimaryMode('manual'); break;
+    case 'g': case 'G': openGoal(); break;
+  }
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  drawTicks();
+  const q = QUOTES[qi];
+  el.quoteTxt.textContent = `"${q.t}"`;
+  el.quoteAuth.textContent = `— ${q.a}`;
+  el.modalInp.value = S.goalMins;
+
+  sortSessions();
+  S.goalHitToday = totalMinutesToday() >= S.goalMins;
+
+  // Default to FLOW (user's primary use case)
+  setPrimaryMode('flow');
+
+  renderSessions();
+  updateGoalLive();
+  updateStats();
+  updateDoneBtn();
+  tick(); setInterval(tick, 1000);
+  setInterval(rotateQuote, 30000);
+})();
+</script>
+</body>
+</html>
