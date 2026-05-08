@@ -182,6 +182,18 @@
       stroke-linejoin: round;
     }
 
+    /* Timer block — wraps display + hint + badge so the whole
+       composition can rotate as one unit on portrait screens. */
+    .timer-block {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      transform-origin: center center;
+    }
+
     /* Timer display */
     .display {
       position: relative;
@@ -198,12 +210,18 @@
       transition: color 0.45s ease, transform 0.25s ease, filter 0.25s ease;
       transform-origin: center;
       text-shadow: 0 0 30px rgba(255, 180, 100, 0.04);
+      /* Critical: never let inline-block digits wrap to a new line.
+         Combined with flex-shrink:0 on the children below, this
+         guarantees "60.000" stays on one line regardless of size. */
+      white-space: nowrap;
     }
 
     .seconds {
       font-size: clamp(8rem, 38vw, 22rem);
       font-weight: 700;
       line-height: 0.85;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .ms {
       font-size: clamp(3rem, 14vw, 8rem);
@@ -211,6 +229,8 @@
       opacity: 0.5;
       margin-left: 0.04em;
       letter-spacing: -0.015em;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     /* Fixed-width digit slots — rock-solid, font-agnostic.
@@ -242,11 +262,13 @@
       min-height: 1.4em;
     }
 
-    /* Floating badge for tap feedback (+10s, RESET 20) */
+    /* Floating badge for tap feedback (+10s, RESET 20).
+       Anchored to the top edge of .display so it moves with
+       the timer when the timer-block rotates in portrait mode. */
     .badge {
       position: absolute;
       z-index: 4;
-      top: 28%;
+      top: 0;
       left: 50%;
       font-family: 'JetBrains Mono', monospace;
       font-size: clamp(1.1rem, 4.2vw, 1.7rem);
@@ -256,15 +278,16 @@
       opacity: 0;
       white-space: nowrap;
       text-shadow: 0 0 20px currentColor;
+      transform: translate(-50%, -50%);
     }
     .badge.show { animation: badge-rise 0.8s cubic-bezier(0.18, 0.9, 0.4, 1) forwards; }
     .badge--add   { color: var(--text-calm); }
     .badge--reset { color: var(--text-danger); }
     @keyframes badge-rise {
-      0%   { opacity: 0; transform: translate(-50%, 20%) scale(0.7); }
-      25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-      60%  { opacity: 1; transform: translate(-50%, -90%) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -150%) scale(0.95); }
+      0%   { opacity: 0; transform: translate(-50%, 50%)  scale(0.7); }
+      25%  { opacity: 1; transform: translate(-50%, -90%) scale(1.15); }
+      60%  { opacity: 1; transform: translate(-50%, -180%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -270%) scale(0.95); }
     }
 
     /* Bottom progress fuse */
@@ -384,6 +407,41 @@
       30%  { transform: scale(1.12); filter: brightness(1.6); }
       100% { transform: scale(1); filter: brightness(1); }
     }
+
+    /* === Portrait orientation ===
+       On screens taller than wide, the timer-block is rotated 90°
+       clockwise so the digits run along the screen's long axis.
+
+       Sizing is the tricky part. After rotation:
+         · the digit's HEIGHT in the unrotated frame = its WIDTH on screen
+           → must fit screen width  → cap by vw
+         · the digit's WIDTH  in the unrotated frame = its HEIGHT on screen
+           → must fit screen height → cap by vh
+       So the font-size is the smaller of the two caps. Whichever
+       dimension is more restrictive wins, the timer always fits. */
+    @media (orientation: portrait) {
+      .timer-block {
+        transform: rotate(90deg);
+      }
+      .seconds {
+        /* 42vh fills the long axis on typical phones;
+           95vw stops a single digit from ever overflowing the short axis. */
+        font-size: clamp(6rem, min(42vh, 95vw), 28rem);
+      }
+      .ms {
+        font-size: clamp(2rem, min(15vh, 34vw), 10rem);
+      }
+      .hint {
+        font-size: clamp(0.7rem, 2.4vh, 0.95rem);
+        margin-top: 3vh;
+      }
+      .badge {
+        font-size: clamp(1.1rem, 3.6vh, 1.7rem);
+      }
+      .brand {
+        opacity: 0.22;
+      }
+    }
   </style>
 </head>
 <body>
@@ -410,13 +468,13 @@
 
     <div class="frame-line top"></div>
 
-    <div class="display" id="display">
-      <span class="seconds" id="seconds"><span class="d">6</span><span class="d">0</span></span><span class="ms" id="ms"><span class="dot">.</span><span class="d">0</span><span class="d">0</span><span class="d">0</span></span>
+    <div class="timer-block" id="timerBlock">
+      <div class="display" id="display">
+        <div class="badge" id="badge"></div>
+        <span class="seconds" id="seconds"><span class="d">6</span><span class="d">0</span></span><span class="ms" id="ms"><span class="dot">.</span><span class="d">0</span><span class="d">0</span><span class="d">0</span></span>
+      </div>
+      <div class="hint" id="hint">tap to start</div>
     </div>
-
-    <div class="hint" id="hint">tap to start</div>
-
-    <div class="badge" id="badge"></div>
 
     <div class="scale-marks" id="scaleMarks"></div>
     <div class="frame-line bottom"></div>
