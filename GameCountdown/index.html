@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0807">
+  <title>Playing With Fire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-base:        #0c0907;
+      --bg-deep:        #050302;
+      --text-calm:      #f1e6d1;
+      --text-alert:     #ffba5e;
+      --text-danger:    #ff7a26;
+      --text-expired:   #ff2a2a;
+      --rule:           rgba(241, 230, 209, 0.07);
+      --glow-calm:      rgba(241, 230, 209, 0.03);
+      --glow-alert:     rgba(255, 186, 94, 0.10);
+      --glow-danger:    rgba(255, 122, 38, 0.22);
+      --glow-expired:   rgba(255, 42, 42, 0.30);
+      --ember:          rgba(255, 140, 50, 0.65);
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg-base);
+      color: var(--text-calm);
+      font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+    }
+
+    /* Subtle film-grain texture for warmth */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+      background-image:
+        radial-gradient(rgba(255, 200, 150, 0.5) 1px, transparent 1px),
+        radial-gradient(rgba(255, 220, 180, 0.3) 1px, transparent 1px);
+      background-size: 3px 3px, 7px 7px;
+      background-position: 0 0, 1px 2px;
+    }
+
+    .app {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.5s ease;
+      overflow: hidden;
+      background: radial-gradient(ellipse at center, var(--bg-base) 0%, var(--bg-deep) 100%);
+    }
+
+    /* Glow layer — intensifies with state */
+    .glow {
+      position: absolute;
+      inset: -20%;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(circle at center, var(--glow-calm) 0%, transparent 65%);
+      transition: background 0.6s ease;
+    }
+
+    /* Embers — only visible in danger zone */
+    .embers {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+    .ember {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--ember);
+      box-shadow: 0 0 6px var(--ember), 0 0 14px var(--ember);
+      animation: ember-rise linear infinite;
+    }
+    @keyframes ember-rise {
+      0%   { transform: translateY(0) translateX(0); opacity: 0; }
+      15%  { opacity: 0.9; }
+      85%  { opacity: 0.7; }
+      100% { transform: translateY(-110vh) translateX(var(--drift, 10px)); opacity: 0; }
+    }
+
+    /* Top brand line */
+    .brand {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 24px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      opacity: 0.32;
+      pointer-events: none;
+      z-index: 2;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .brand .dot {
+      display: inline-block;
+      margin: 0 0.6em;
+      opacity: 0.5;
+    }
+
+    /* Corner buttons */
+    .corner-btn {
+      position: absolute;
+      top: env(safe-area-inset-top, 0px);
+      width: 52px;
+      height: 52px;
+      margin: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      color: var(--text-calm);
+      opacity: 0.55;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 6;
+      transition: opacity 0.2s ease, transform 0.15s ease, background 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .corner-btn:active {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.10);
+      transform: scale(0.92);
+    }
+    @media (hover: hover) {
+      .corner-btn:hover { opacity: 1; background: rgba(255, 255, 255, 0.07); }
+    }
+    .corner-btn:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 3px;
+      opacity: 1;
+    }
+    .corner-btn--left  { left: 0; }
+    .corner-btn--right { right: 0; }
+    .corner-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Timer display */
+    .display {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.025em;
+      pointer-events: none;
+      color: var(--text-calm);
+      transition: color 0.45s ease, transform 0.25s ease, filter 0.25s ease;
+      transform-origin: center;
+      text-shadow: 0 0 30px rgba(255, 180, 100, 0.04);
+    }
+
+    .seconds {
+      font-size: clamp(8rem, 38vw, 22rem);
+      font-weight: 700;
+      line-height: 0.85;
+    }
+    .ms {
+      font-size: clamp(3rem, 14vw, 8rem);
+      font-weight: 500;
+      opacity: 0.5;
+      margin-left: 0.04em;
+      letter-spacing: -0.015em;
+    }
+
+    /* Fixed-width digit slots — rock-solid, font-agnostic.
+       Each digit lives in its own box of identical width, so
+       changing digits can never shift the baseline horizontally. */
+    .d, .dot {
+      display: inline-block;
+      text-align: center;
+      vertical-align: baseline;
+    }
+    .seconds .d { width: 0.58em; }
+    .ms .d      { width: 0.58em; }
+    .ms .dot    { width: 0.28em; }
+
+    /* Hint line below timer */
+    .hint {
+      position: relative;
+      z-index: 3;
+      margin-top: 4vh;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.7rem, 2.8vw, 0.95rem);
+      font-weight: 500;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      opacity: 0.42;
+      transition: opacity 0.3s ease, color 0.4s ease;
+      pointer-events: none;
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    /* Floating badge for tap feedback (+10s, RESET 20) */
+    .badge {
+      position: absolute;
+      z-index: 4;
+      top: 28%;
+      left: 50%;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1.1rem, 4.2vw, 1.7rem);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      pointer-events: none;
+      opacity: 0;
+      white-space: nowrap;
+      text-shadow: 0 0 20px currentColor;
+    }
+    .badge.show { animation: badge-rise 0.8s cubic-bezier(0.18, 0.9, 0.4, 1) forwards; }
+    .badge--add   { color: var(--text-calm); }
+    .badge--reset { color: var(--text-danger); }
+    @keyframes badge-rise {
+      0%   { opacity: 0; transform: translate(-50%, 20%) scale(0.7); }
+      25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+      60%  { opacity: 1; transform: translate(-50%, -90%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -150%) scale(0.95); }
+    }
+
+    /* Bottom progress fuse */
+    .progress-track {
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 0px);
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      z-index: 3;
+    }
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      background: var(--text-calm);
+      transform-origin: left center;
+      transform: scaleX(1);
+      transition: background-color 0.45s ease;
+      box-shadow: 0 0 8px currentColor;
+    }
+    .progress-glow {
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 0px);
+      left: 0;
+      height: 30px;
+      width: 100%;
+      pointer-events: none;
+      z-index: 2;
+      background: linear-gradient(to top, var(--glow-calm), transparent);
+      transition: background 0.5s ease;
+      opacity: 0;
+    }
+
+    /* Footer hairlines for industrial texture */
+    .frame-line {
+      position: absolute;
+      background: var(--rule);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .frame-line.top    { top: calc(env(safe-area-inset-top, 0px) + 80px); left: 5vw; right: 5vw; height: 1px; }
+    .frame-line.bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); left: 5vw; right: 5vw; height: 1px; }
+
+    .scale-marks {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+      left: 0;
+      right: 0;
+      height: 8px;
+      pointer-events: none;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 5vw;
+      opacity: 0.5;
+    }
+    .scale-marks span {
+      width: 1px;
+      background: var(--rule);
+      display: block;
+    }
+    .scale-marks span:nth-child(3n+1) { height: 8px; }
+    .scale-marks span:nth-child(3n+2) { height: 4px; }
+    .scale-marks span:nth-child(3n+3) { height: 4px; }
+
+    /* === Zone styles === */
+    .app.zone-alert .display    { color: var(--text-alert); }
+    .app.zone-alert .progress-fill { background: var(--text-alert); }
+    .app.zone-alert .glow       { background: radial-gradient(circle at center, var(--glow-alert) 0%, transparent 65%); }
+
+    .app.zone-danger .display   { color: var(--text-danger); }
+    .app.zone-danger .progress-fill { background: var(--text-danger); }
+    .app.zone-danger .glow      { background: radial-gradient(circle at center, var(--glow-danger) 0%, transparent 60%); animation: pulse-glow 1.4s ease-in-out infinite; }
+    .app.zone-danger .embers    { opacity: 1; }
+    .app.zone-danger .progress-glow { opacity: 1; background: linear-gradient(to top, var(--glow-danger), transparent); }
+
+    .app.zone-expired .display  { color: var(--text-expired); filter: drop-shadow(0 0 18px rgba(255, 60, 60, 0.5)); }
+    .app.zone-expired .progress-fill { background: var(--text-expired); transform: scaleX(0); }
+    .app.zone-expired .glow     { background: radial-gradient(circle at center, var(--glow-expired) 0%, transparent 55%); animation: pulse-glow-fast 0.85s ease-in-out infinite; }
+
+    /* === State overlays === */
+    .app.state-expired { background: radial-gradient(ellipse at center, #2a0808 0%, #0c0303 100%); }
+    .app.state-expired .display { animation: shake 0.55s cubic-bezier(.36,.07,.19,.97); }
+    .app.state-expired .hint { color: var(--text-expired); opacity: 0.9; animation: hint-pulse 1.2s ease-in-out infinite; }
+
+    .app.state-paused .display { opacity: 0.45; filter: blur(0.4px); }
+    .app.state-paused .hint    { opacity: 0.85; letter-spacing: 0.5em; }
+
+    .app.state-idle .hint      { opacity: 0.7; }
+    .app.state-idle .display   { animation: idle-breathe 3s ease-in-out infinite; }
+
+    @keyframes pulse-glow      { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+    @keyframes pulse-glow-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    @keyframes hint-pulse      { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.4; } }
+    @keyframes idle-breathe    { 0%, 100% { opacity: 0.92; } 50% { opacity: 1; } }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-3px); }
+      20%, 80% { transform: translateX(5px); }
+      30%, 50%, 70% { transform: translateX(-9px); }
+      40%, 60% { transform: translateX(9px); }
+    }
+
+    /* Tap feedback on display */
+    .display.tap-add  { animation: pop 0.32s ease-out; }
+    .display.tap-late { animation: pop-late 0.45s cubic-bezier(.18,.89,.32,1.28); }
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    @keyframes pop-late {
+      0%   { transform: scale(1); filter: brightness(1); }
+      30%  { transform: scale(1.12); filter: brightness(1.6); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app state-idle zone-calm" id="app">
+
+    <div class="brand">Project<span class="dot">·</span>3<span class="dot">·</span>Playing With Fire</div>
+
+    <button class="corner-btn corner-btn--left" id="pauseBtn" aria-label="Pause / Resume">
+      <svg id="pauseIcon" viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="9" y1="5" x2="9" y2="19"/>
+        <line x1="15" y1="5" x2="15" y2="19"/>
+      </svg>
+    </button>
+
+    <button class="corner-btn corner-btn--right" id="resetBtn" aria-label="Reset to 60">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="3 4 3 11 10 11"/>
+        <path d="M3.5 11a8.5 8.5 0 1 0 2.6-6.1L3 7.5"/>
+      </svg>
+    </button>
+
+    <div class="glow"></div>
+    <div class="embers" id="embers"></div>
+
+    <div class="frame-line top"></div>
+
+    <div class="display" id="display">
+      <span class="seconds" id="seconds"><span class="d">6</span><span class="d">0</span></span><span class="ms" id="ms"><span class="dot">.</span><span class="d">0</span><span class="d">0</span><span class="d">0</span></span>
+    </div>
+
+    <div class="hint" id="hint">tap to start</div>
+
+    <div class="badge" id="badge"></div>
+
+    <div class="scale-marks" id="scaleMarks"></div>
+    <div class="frame-line bottom"></div>
+    <div class="progress-glow"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ============================================================
+    // CONFIG  (mirrors Section 4.11 of the Project-3 design doc)
+    // ============================================================
+    const MAX_TIME = 60;   // seconds (start + ceiling)
+    const FLOOR    = 20;   // seconds (late-click threshold)
+    const ADD      = 10;   // seconds (normal click bonus)
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let state     = 'idle';            // 'idle' | 'running' | 'paused' | 'expired'
+    let zone      = 'calm';            // 'calm' | 'alert' | 'danger' | 'expired'
+    let remaining = MAX_TIME * 1000;   // ms
+    let endTime   = 0;                 // performance.now() target
+    let raf       = null;
+
+    // ============================================================
+    // DOM
+    // ============================================================
+    const app          = document.getElementById('app');
+    const display      = document.getElementById('display');
+    const secondsEl    = document.getElementById('seconds');
+    const msEl         = document.getElementById('ms');
+    const hint         = document.getElementById('hint');
+    const badge        = document.getElementById('badge');
+    const progressFill = document.getElementById('progressFill');
+    const pauseBtn     = document.getElementById('pauseBtn');
+    const pauseIcon    = document.getElementById('pauseIcon');
+    const resetBtn     = document.getElementById('resetBtn');
+    const embersEl     = document.getElementById('embers');
+    const scaleMarksEl = document.getElementById('scaleMarks');
+
+    // Cache the individual digit slots so render() never touches structure
+    const sDigits = secondsEl.querySelectorAll('.d');
+    const mDigits = msEl.querySelectorAll('.d');
+
+    // ============================================================
+    // DECORATION — embers and scale marks
+    // ============================================================
+    (function buildEmbers() {
+      const COUNT = 18;
+      for (let i = 0; i < COUNT; i++) {
+        const e = document.createElement('div');
+        e.className = 'ember';
+        e.style.left = (Math.random() * 100) + '%';
+        e.style.bottom = (-5 - Math.random() * 10) + 'px';
+        e.style.animationDuration = (4 + Math.random() * 5) + 's';
+        e.style.animationDelay = (Math.random() * 6) + 's';
+        e.style.setProperty('--drift', ((Math.random() - 0.5) * 60) + 'px');
+        e.style.opacity = (0.4 + Math.random() * 0.5);
+        embersEl.appendChild(e);
+      }
+    })();
+
+    (function buildScaleMarks() {
+      // 60 marks (one per second) for a subtle ruler at the foot
+      for (let i = 0; i < 60; i++) scaleMarksEl.appendChild(document.createElement('span'));
+    })();
+
+    // ============================================================
+    // AUDIO  (Web Audio API — no asset files needed)
+    // ============================================================
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (_) { audioCtx = null; }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // Sharp double-click "time up" cue
+    function playExpireSound() {
+      ensureAudio();
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime;
+      const tones = [
+        { freq: 880, delay: 0.00, dur: 0.10 },
+        { freq: 660, delay: 0.13, dur: 0.18 }
+      ];
+      tones.forEach(({ freq, delay, dur }) => {
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.22, t + delay + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + delay);
+        osc.stop(t + delay + dur + 0.02);
+      });
+    }
+
+    function vibrate(pattern) {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(pattern); } catch (_) {}
+      }
+    }
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+    function setZone(next) {
+      if (next === zone) return;
+      app.classList.remove('zone-' + zone);
+      app.classList.add('zone-' + next);
+      zone = next;
+    }
+
+    function setState(next) {
+      if (next === state) return;
+      app.classList.remove('state-' + state);
+      app.classList.add('state-' + next);
+      state = next;
+    }
+
+    function computeZone(ms) {
+      if (ms <= 0)                     return 'expired';
+      if (ms <  FLOOR * 1000)          return 'danger';
+      if (ms < (FLOOR + 10) * 1000)    return 'alert';
+      return 'calm';
+    }
+
+    function setHint() {
+      let h = '';
+      if      (state === 'idle')      h = 'tap to start';
+      else if (state === 'paused')    h = 'paused';
+      else if (state === 'expired')   h = 'time up · tap to reset';
+      else                            h = 'tap +10s';
+      hint.textContent = h;
+    }
+
+    function render() {
+      const ms = Math.max(0, Math.floor(remaining));
+      const s  = Math.floor(ms / 1000);
+      const f  = ms % 1000;
+      const sStr = String(s).padStart(2, '0');
+      const fStr = String(f).padStart(3, '0');
+      sDigits[0].textContent = sStr[0];
+      sDigits[1].textContent = sStr[1];
+      mDigits[0].textContent = fStr[0];
+      mDigits[1].textContent = fStr[1];
+      mDigits[2].textContent = fStr[2];
+
+      // Drain the bottom fuse from full → empty
+      const pct = ms / (MAX_TIME * 1000);
+      progressFill.style.transform = 'scaleX(' + pct + ')';
+
+      setZone(computeZone(ms));
+      setHint();
+    }
+
+    // ============================================================
+    // CORE LOOP
+    // ============================================================
+    function tick() {
+      if (state !== 'running') return;
+      remaining = endTime - performance.now();
+      if (remaining <= 0) {
+        remaining = 0;
+        expire();
+        return;
+      }
+      render();
+      raf = requestAnimationFrame(tick);
+    }
+
+    function startRunning() {
+      remaining = MAX_TIME * 1000;
+      endTime   = performance.now() + remaining;
+      setState('running');
+      render();
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(tick);
+    }
+
+    function expire() {
+      cancelAnimationFrame(raf);
+      remaining = 0;
+      setState('expired');
+      render();
+      playExpireSound();
+      vibrate([110, 60, 110, 60, 220]);
+    }
+
+    function applyMainTap() {
+      // Rule: always +10s; floor at 20s; cap at 60s.
+      //   - tap at 18s  → 28s (gained 10)
+      //   - tap at  5s  → 20s (gained 15 — floor saves you)
+      //   - tap at 55s  → 60s (gained  5 — cap)
+      //   - tap at 60s  → 60s (gained  0 — already maxed)
+      const prev = remaining;
+      let next   = remaining + ADD * 1000;
+      if (next < FLOOR    * 1000) next = FLOOR    * 1000;
+      if (next > MAX_TIME * 1000) next = MAX_TIME * 1000;
+      remaining = next;
+      const gainedSec = Math.round((next - prev) / 1000);
+      const floorSaved = (prev + ADD * 1000) < FLOOR * 1000; // floor actually kicked in
+
+      if (gainedSec === 0) {
+        showBadge('max', 'add');
+        vibrate(8);
+      } else if (floorSaved) {
+        // The floor lifted you out of the danger zone — celebrate it.
+        flashLate();
+        showBadge('+' + gainedSec + 's', 'reset');
+        vibrate([20, 30, 35]);
+      } else {
+        flashAdd();
+        showBadge('+' + gainedSec + 's', 'add');
+        vibrate(15);
+      }
+      endTime = performance.now() + remaining;
+      render();
+    }
+
+    function pauseToggle() {
+      if (state === 'running') {
+        cancelAnimationFrame(raf);
+        remaining = endTime - performance.now();
+        if (remaining < 0) remaining = 0;
+        setState('paused');
+        render();
+        // swap to play icon
+        pauseIcon.innerHTML = '<polygon points="7 4 20 12 7 20 7 4"/>';
+      } else if (state === 'paused') {
+        endTime = performance.now() + remaining;
+        setState('running');
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(tick);
+        // swap to pause icon
+        pauseIcon.innerHTML = '<line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/>';
+      }
+    }
+
+    function fullReset() {
+      cancelAnimationFrame(raf);
+      remaining = MAX_TIME * 1000;
+      setState('idle');
+      render();
+      pauseIcon.innerHTML = '<line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/>';
+      vibrate(10);
+    }
+
+    // ============================================================
+    // FEEDBACK
+    // ============================================================
+    function flashAdd()  {
+      display.classList.remove('tap-add');
+      void display.offsetWidth;
+      display.classList.add('tap-add');
+    }
+    function flashLate() {
+      display.classList.remove('tap-late');
+      void display.offsetWidth;
+      display.classList.add('tap-late');
+    }
+    function showBadge(text, kind) {
+      badge.textContent = text;
+      badge.className = 'badge badge--' + kind;
+      void badge.offsetWidth;
+      badge.classList.add('show');
+    }
+
+    // ============================================================
+    // INPUT
+    // ============================================================
+    app.addEventListener('click', (e) => {
+      // Ignore clicks that landed on the corner buttons
+      if (e.target.closest('.corner-btn')) return;
+      ensureAudio();
+
+      if      (state === 'idle')      startRunning();
+      else if (state === 'running')   applyMainTap();
+      else if (state === 'expired')   fullReset();   // tap at 0 → back to 60, waits
+      // 'paused' → no-op on main tap (use pause btn)
+    });
+
+    pauseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ensureAudio();
+      if (state === 'idle' || state === 'expired') return; // nothing to pause
+      pauseToggle();
+    });
+
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ensureAudio();
+      fullReset();
+    });
+
+    // Keyboard fallbacks (helpful on desktop)
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (e.code === 'Space') { e.preventDefault(); app.click(); }
+      else if (e.key.toLowerCase() === 'p') pauseBtn.click();
+      else if (e.key.toLowerCase() === 'r') resetBtn.click();
+    });
+
+    // Pause when tab hidden so the timer doesn't lie
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state === 'running') pauseToggle();
+    });
+
+    // Initial paint
+    render();
+  </script>
+</body>
+</html>
