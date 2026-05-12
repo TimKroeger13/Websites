@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IMMO//SCRAPER · Berlin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #141414;
+    --surface-2: #1c1c1c;
+    --border:    #2a2a2a;
+    --border-hi: #444;
+    --text:      #e8e8e8;
+    --muted:     #7a7a7a;
+    --dim:       #555;
+    --accent:    #ff5b1f;
+    --ok:        #5bff8a;
+    --warn:      #ffb84d;
+    --err:       #ff4d4d;
+
+    --mono:    "JetBrains Mono", ui-monospace, monospace;
+    --display: "Major Mono Display", "JetBrains Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--mono); }
+  body {
+    min-height: 100vh;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    padding: 28px 40px 16px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 400;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  h1 .slash { color: var(--accent); }
+  h1 .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--muted);
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+
+  .status-block {
+    text-align: right;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .status-block .pulse {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    background: var(--dim);
+  }
+  .status-block .pulse.running {
+    background: var(--accent);
+    box-shadow: 0 0 0 0 var(--accent);
+    animation: pulse 1.4s infinite;
+  }
+  .status-block .pulse.blocked {
+    background: var(--err);
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,91,31,0.6); }
+    70%  { box-shadow: 0 0 0 12px rgba(255,91,31,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,91,31,0); }
+  }
+
+  /* ---------- Control panel ---------- */
+  .panel {
+    padding: 20px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .panel label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  input[type=text], select {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    min-width: 180px;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  button {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-hi);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: background 80ms, color 80ms, border-color 80ms;
+  }
+  button:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+  button.primary {
+    background: var(--accent);
+    color: #1a0500;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  button.primary:hover { background: #ff7a47; border-color: #ff7a47; color: #1a0500; }
+  button:disabled { opacity: 0.3; cursor: not-allowed; background: transparent; color: var(--text); border-color: var(--border); }
+
+  /* ---------- Stats strip ---------- */
+  .stats {
+    padding: 16px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    background: var(--bg);
+    padding: 14px 18px;
+  }
+  .stat .label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stat .value {
+    font-family: var(--display);
+    font-size: 28px;
+    margin-top: 6px;
+    color: var(--text);
+  }
+  .stat.accent .value { color: var(--accent); }
+
+  /* ---------- Table ---------- */
+  .table-wrap {
+    padding: 0 40px 40px;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    font-size: 12px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--border-hi);
+  }
+  th:hover { color: var(--text); }
+  th.sorted-asc::after  { content: " ▲"; color: var(--accent); }
+  th.sorted-desc::after { content: " ▼"; color: var(--accent); }
+  tbody tr:hover {
+    background: var(--surface);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td a { color: var(--accent); text-decoration: none; }
+  tbody td a:hover { text-decoration: underline; }
+  tbody td.muted { color: var(--muted); }
+
+  .empty {
+    padding: 60px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ---------- Log tail (collapsible) ---------- */
+  details.log {
+    margin: 0 40px 24px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  details.log > summary {
+    cursor: pointer;
+    padding: 12px 18px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.log > summary:hover { color: var(--text); }
+  details.log pre {
+    margin: 0;
+    padding: 12px 18px 18px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-height: 280px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+
+  footer {
+    padding: 20px 40px 40px;
+    border-top: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  footer .accent { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    immo<span class="slash">//</span>scraper
+    <span class="sub">ImmobilienScout24 · Berlin · Coordinates &amp; Heizkosten</span>
+  </h1>
+  <div class="status-block">
+    <div><span class="pulse" id="pulse"></span> <span id="status-text">Idle</span></div>
+    <div id="status-detail">No active scrape</div>
+  </div>
+</header>
+
+<section class="panel">
+  <button id="btn-start" class="primary">▶ Start Scrape</button>
+  <button id="btn-stop">■ Stop</button>
+  <span style="flex:1"></span>
+  <label for="search">Filter</label>
+  <input id="search" type="text" placeholder="address, title, ID…" />
+  <label for="cat">Kategorie</label>
+  <select id="cat">
+    <option value="">Alle</option>
+    <option>wohnung-mieten</option>
+    <option>wohnung-kaufen</option>
+    <option>haus-mieten</option>
+    <option>haus-kaufen</option>
+    <option>wg-zimmer</option>
+  </select>
+  <button id="btn-csv">⬇ CSV</button>
+  <button id="btn-refresh">⟳ Refresh</button>
+</section>
+
+<section class="stats" id="stats">
+  <div class="stat"><div class="label">Listings seen</div><div class="value" id="s-seen">–</div></div>
+  <div class="stat accent"><div class="label">With exact coords</div><div class="value" id="s-ok">–</div></div>
+  <div class="stat"><div class="label">Rejected</div><div class="value" id="s-rejected">–</div></div>
+  <div class="stat"><div class="label">Errors</div><div class="value" id="s-errors">–</div></div>
+  <div class="stat"><div class="label">Last scrape</div><div class="value" id="s-last" style="font-size:14px">–</div></div>
+</section>
+
+<details class="log">
+  <summary>▼ Live Log Tail</summary>
+  <pre id="log">(scrape not running)</pre>
+</details>
+
+<div class="table-wrap">
+  <table id="tbl">
+    <thead><tr>
+      <th data-key="expose_id">ID</th>
+      <th data-key="category">Kategorie</th>
+      <th data-key="title">Titel</th>
+      <th data-key="address">Adresse</th>
+      <th data-key="lat" class="num">Lat</th>
+      <th data-key="lon" class="num">Lon</th>
+      <th data-key="heizkosten_eur" class="num">Heizk. €</th>
+      <th data-key="kaltmiete_eur" class="num">Kalt €</th>
+      <th data-key="wohnflaeche_qm" class="num">m²</th>
+      <th data-key="zimmer" class="num">Zi</th>
+      <th data-key="scraped_at">Scraped</th>
+      <th>Link</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="empty" class="empty" hidden>No data yet. Start a scrape to populate the table.</div>
+</div>
+
+<footer>
+  <span class="accent">immo//scraper</span> · rate-limited 10s · local SQLite · use responsibly
+</footer>
+
+<script>
+  // -----------------------------------------------------------------------
+  // State
+  // -----------------------------------------------------------------------
+  let rows = [];
+  let sortKey = "scraped_at";
+  let sortDir = "desc";
+
+  // -----------------------------------------------------------------------
+  // Rendering
+  // -----------------------------------------------------------------------
+  const fmt = (v, digits) => {
+    if (v === null || v === undefined || v === "") return "–";
+    if (typeof v === "number") return digits != null ? v.toFixed(digits) : v.toLocaleString("de-DE");
+    return v;
+  };
+
+  function render() {
+    const search = document.getElementById("search").value.trim().toLowerCase();
+    const cat = document.getElementById("cat").value;
+
+    let filtered = rows.filter(r => {
+      if (cat && r.category !== cat) return false;
+      if (!search) return true;
+      const hay = [r.expose_id, r.title, r.address].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(search);
+    });
+
+    filtered.sort((a, b) => {
+      const va = a[sortKey], vb = b[sortKey];
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      const cmp = typeof va === "number" && typeof vb === "number"
+        ? va - vb
+        : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+    for (const r of filtered) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="muted">${r.expose_id}</td>
+        <td>${r.category ?? "–"}</td>
+        <td title="${(r.title ?? "").replace(/"/g, "&quot;")}">${truncate(r.title, 40)}</td>
+        <td title="${(r.address ?? "").replace(/"/g, "&quot;")}">${truncate(r.address, 40)}</td>
+        <td class="num">${fmt(r.lat, 5)}</td>
+        <td class="num">${fmt(r.lon, 5)}</td>
+        <td class="num">${fmt(r.heizkosten_eur, 2)}</td>
+        <td class="num">${fmt(r.kaltmiete_eur, 0)}</td>
+        <td class="num">${fmt(r.wohnflaeche_qm, 1)}</td>
+        <td class="num">${fmt(r.zimmer, 1)}</td>
+        <td class="muted">${(r.scraped_at ?? "").slice(0, 16).replace("T", " ")}</td>
+        <td><a href="${r.url}" target="_blank" rel="noopener">↗</a></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    document.getElementById("empty").hidden = filtered.length > 0;
+
+    document.querySelectorAll("th[data-key]").forEach(th => {
+      th.classList.remove("sorted-asc", "sorted-desc");
+      if (th.dataset.key === sortKey) {
+        th.classList.add(sortDir === "asc" ? "sorted-asc" : "sorted-desc");
+      }
+    });
+  }
+
+  function truncate(s, n) {
+    if (!s) return "–";
+    return s.length > n ? s.slice(0, n - 1) + "…" : s;
+  }
+
+  // -----------------------------------------------------------------------
+  // API
+  // -----------------------------------------------------------------------
+  async function loadApartments() {
+    const r = await fetch("/api/apartments");
+    rows = await r.json();
+    render();
+  }
+
+  async function loadStats() {
+    const r = await fetch("/api/stats");
+    const s = await r.json();
+    document.getElementById("s-seen").textContent = s.total_seen ?? 0;
+    document.getElementById("s-ok").textContent = s.with_exact_coords ?? 0;
+    document.getElementById("s-rejected").textContent = s.rejected ?? 0;
+    document.getElementById("s-errors").textContent = s.errors ?? 0;
+    document.getElementById("s-last").textContent =
+      s.last_scrape ? s.last_scrape.replace("T", " ") : "never";
+  }
+
+  async function loadStatus() {
+    const r = await fetch("/api/status");
+    const st = await r.json();
+    const pulse = document.getElementById("pulse");
+    const text  = document.getElementById("status-text");
+    const detail = document.getElementById("status-detail");
+
+    pulse.classList.remove("running", "blocked");
+    if (st.block_backoff_until) {
+      pulse.classList.add("blocked");
+      text.textContent = "Blocked — backing off";
+      detail.textContent = `Resumes at ${st.block_backoff_until} UTC`;
+    } else if (st.running) {
+      pulse.classList.add("running");
+      text.textContent = `Running · ${st.current_category ?? ""} p${st.current_page}`;
+      detail.textContent = `${st.apartments_added} added · ${st.rejected} rejected · ${st.errors} err`;
+    } else {
+      text.textContent = "Idle";
+      detail.textContent = st.finished_at
+        ? `Last run finished ${st.finished_at}`
+        : "No active scrape";
+    }
+    document.getElementById("btn-start").disabled = !!st.running;
+    document.getElementById("btn-stop").disabled  = !st.running;
+
+    const log = document.getElementById("log");
+    log.textContent = (st.log_tail && st.log_tail.length) ? st.log_tail.join("\n") : "(no log entries yet)";
+  }
+
+  async function startScrape() {
+    const r = await fetch("/api/scrape/start", { method: "POST" });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      alert("Could not start: " + (e.detail ?? r.status));
+    }
+    loadStatus();
+  }
+
+  async function stopScrape() {
+    const r = await fetch("/api/scrape/stop", { method: "POST" });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      alert("Could not stop: " + (e.detail ?? r.status));
+    }
+    loadStatus();
+  }
+
+  // -----------------------------------------------------------------------
+  // Events
+  // -----------------------------------------------------------------------
+  document.querySelectorAll("th[data-key]").forEach(th => {
+    th.addEventListener("click", () => {
+      const k = th.dataset.key;
+      if (sortKey === k) {
+        sortDir = sortDir === "asc" ? "desc" : "asc";
+      } else {
+        sortKey = k;
+        sortDir = "asc";
+      }
+      render();
+    });
+  });
+  document.getElementById("search").addEventListener("input", render);
+  document.getElementById("cat").addEventListener("change", render);
+  document.getElementById("btn-start").addEventListener("click", startScrape);
+  document.getElementById("btn-stop").addEventListener("click", stopScrape);
+  document.getElementById("btn-refresh").addEventListener("click", () => {
+    loadApartments(); loadStats(); loadStatus();
+  });
+  document.getElementById("btn-csv").addEventListener("click", () => {
+    window.location.href = "/api/apartments.csv";
+  });
+
+  // -----------------------------------------------------------------------
+  // Bootstrap + polling
+  // -----------------------------------------------------------------------
+  loadApartments();
+  loadStats();
+  loadStatus();
+  setInterval(() => { loadStats(); loadStatus(); }, 3000);
+  setInterval(loadApartments, 15000);
+</script>
+</body>
+</html>
