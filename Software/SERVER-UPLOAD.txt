@@ -1,0 +1,126 @@
+=========================================================
+ Software-Downloadseite: Dateien auf den Server kopieren
+=========================================================
+
+Ziel im Netz:  https://tkroeger.com/websites/Software/
+(gleiches Schema wie die anderen Projekte, z.B.
+ https://tkroeger.com/websites/ExtractionCalculator/ )
+
+Platzhalter vorher ersetzen:
+  BENUTZER   = SSH-Benutzername   (z.B. tim)
+  SERVER     = tkroeger.com       (oder die IP des Servers)
+  ZIELPFAD   = Ordner auf dem Server, in dem "websites" liegt,
+               plus /websites/Software
+               (z.B. /var/www/html/websites/Software)
+
+
+---------------------------------------------------------
+1) Neue Datei lokal ablegen
+---------------------------------------------------------
+Datei einfach hier hineinkopieren:
+
+    G:\Repos\Websites\Software\files\
+
+
+---------------------------------------------------------
+2) Dateiliste neu erzeugen
+---------------------------------------------------------
+In PowerShell im Ordner G:\Repos\Websites\Software :
+
+    powershell -ExecutionPolicy Bypass -File .\make-manifest.ps1
+
+Das schreibt files\files.json (Name, Groesse, Datum).
+Die Webseite liest diese Datei - ohne den Schritt taucht
+die neue Datei nicht in der Liste auf.
+
+Optional: in files.json von Hand ergaenzen -
+    "description": "Kurzbeschreibung",
+    "version": "1.2.0"
+Diese Angaben bleiben beim naechsten Lauf des Skripts erhalten.
+
+
+---------------------------------------------------------
+3a) Hochladen mit scp  (ist in Windows 11 schon dabei)
+---------------------------------------------------------
+Einzelne Datei:
+
+    scp "G:\Repos\Websites\Software\files\MeinTool.exe" BENUTZER@SERVER:ZIELPFAD/files/
+
+Kompletter Ordner inkl. index.html (Punkt am Ende beachten):
+
+    scp -r "G:\Repos\Websites\Software\." BENUTZER@SERVER:ZIELPFAD/
+
+Nur die Dateiliste nachschieben:
+
+    scp "G:\Repos\Websites\Software\files\files.json" BENUTZER@SERVER:ZIELPFAD/files/
+
+
+---------------------------------------------------------
+3b) Hochladen mit rsync  (schneller, nur Aenderungen)
+---------------------------------------------------------
+Braucht rsync (z.B. ueber WSL oder Git Bash):
+
+    rsync -avz --delete "/g/Repos/Websites/Software/" BENUTZER@SERVER:ZIELPFAD/
+
+  -a  Rechte/Zeitstempel behalten
+  -v  zeigt was passiert
+  -z  komprimiert waehrend der Uebertragung
+  --delete  loescht auf dem Server, was lokal weg ist  (VORSICHT)
+
+Testlauf ohne etwas zu veraendern: zusaetzlich --dry-run anhaengen.
+
+
+---------------------------------------------------------
+3c) Hochladen mit WinSCP  (grafisch, zum Klicken)
+---------------------------------------------------------
+Neues Verbindungsziel -> Protokoll SFTP -> SERVER / BENUTZER.
+Links lokal nach G:\Repos\Websites\Software\files
+Rechts auf dem Server nach ZIELPFAD/files
+Dateien per Drag & Drop hinueberziehen,
+danach files.json nicht vergessen.
+
+
+---------------------------------------------------------
+4) Rechte auf dem Server pruefen (einmalig)
+---------------------------------------------------------
+    ssh BENUTZER@SERVER
+    chmod -R 755 ZIELPFAD
+    # bei Apache/nginx ggf. Besitzer setzen:
+    sudo chown -R www-data:www-data ZIELPFAD
+
+
+---------------------------------------------------------
+5) Git
+---------------------------------------------------------
+Die .exe-Dateien werden NICHT ins Repo eingecheckt.
+Geregelt in G:\Repos\Websites\.gitignore :
+
+    Software/files/*
+    !Software/files/.gitkeep
+    Software/files/files.json
+
+Es wandert also nur der leere Ordner (mit der Platzhalterdatei
+.gitkeep) ins Git - die Programme kommen ausschliesslich per
+Upload auf den Server.
+
+Pruefen, was wirklich committet wuerde:
+
+    git -C G:\Repos\Websites status --porcelain -uall
+
+
+---------------------------------------------------------
+6) Kontrolle
+---------------------------------------------------------
+Im Browser aufrufen:  https://tkroeger.com/websites/Software/
+Neue Datei nicht sichtbar?  ->  Strg+F5 (Cache leeren)
+                            ->  liegt files.json wirklich im Ordner files/ ?
+
+Danach am besten noch auf der Profilseite verlinken:
+    https://tkroeger.com/index/  ->  Abschnitt "Projects"
+
+Hinweis: index.html per Doppelklick lokal zu oeffnen zeigt oft
+keine Liste (Browser blockiert file://). Zum lokalen Testen:
+
+    cd G:\Repos\Websites\Software
+    python -m http.server 8000
+    Browser:  http://localhost:8000

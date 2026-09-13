@@ -1,0 +1,32 @@
+Platzhalter - bitte nicht loeschen.
+===================================
+
+Dieser Ordner (Software/files/) enthaelt die Dateien, die auf der
+Downloadseite (../index.html) zum Herunterladen angeboten werden:
+Programme (.exe), Installer (.msi) und Archive (.zip).
+
+Warum liegt hier diese Datei?
+
+  * Git kann keine leeren Ordner speichern. Ohne eine Datei darin
+    waere "files/" nach einem frischen Clone einfach nicht vorhanden.
+  * Auch viele Upload-/Sync-Programme (FTP, WinSCP, rsync) legen
+    leere Ordner auf dem Server nicht automatisch an.
+
+Die eigentlichen Downloads werden absichtlich NICHT ins Git-Repo
+eingecheckt - siehe die Regeln in der .gitignore im Hauptordner:
+
+    Software/files/*
+    !Software/files/.gitkeep
+
+Die Dateien kommen stattdessen direkt per Upload auf den Server.
+Wie das geht, steht Schritt fuer Schritt in:
+
+    ../SERVER-UPLOAD.txt
+
+Kurzfassung:
+  1. Datei hier in diesen Ordner kopieren
+  2. im Ordner darueber  make-manifest.ps1  ausfuehren
+  3. Ordnerinhalt auf den Server kopieren (scp / rsync / WinSCP)
+
+Diese Platzhalterdatei wird von der Downloadseite und vom
+Manifest-Skript ignoriert und taucht in der Liste nicht auf.

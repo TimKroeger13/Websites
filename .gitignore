@@ -1,1 +1,9 @@
 ImmoWebScraper/notes.txt
+
+# Software-Downloads: Die eigentlichen Dateien (Programme, Archive, PDFs ...)
+# gehoeren nicht ins Repo - nur der leere Ordner bleibt erhalten.
+Software/files/*
+!Software/files/.gitkeep
+
+# Generierte Dateiliste (wird lokal per make-manifest.ps1 erzeugt)
+Software/files/files.json
