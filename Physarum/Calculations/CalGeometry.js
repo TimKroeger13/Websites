@@ -1,8 +1,10 @@
 var SourceGeometry;
 var NetworkGeometry;
 var UserGeometry;
+var ForcedGeometry;
 
 var ConnectionPoints;
+var ConnectionLines;
 var EntireNetwork;
 var EntireUsage;
 
@@ -35,6 +37,13 @@ async function loadUserData(){
     await AddGeoJsonFeatureToMap_User(UserGeometry);
 }
 
+async function loadForcedData() {
+
+    ForcedGeometry = await loadData();
+
+    await AddGeoJsonFeatureToMap_Forced(ForcedGeometry);
+}
+
 //model
 
 async function modeldata(){
@@ -49,7 +58,9 @@ async function modeldata(){
     TotalEndOutputDisplay = modelJson[0].TotalEndOutputDisplay;
     TotalEndUsageDisplay = modelJson[0].TotalEndUsageDisplay;
     UserGeometry = modelJson[0].UserGeometry;
+    ForcedGeometry = modelJson[0].ForcedGeometry || null;
     EntireUsage = modelJson[0].EntireUsage;
+    ConnectionLines = modelJson[0].ConnectionLines || null;
 
     var PathProfit = []
 
@@ -73,6 +84,22 @@ async function modeldata(){
     await AddGeoJsonFeatureToMap_Source(SourceGeometry);
     await AddGeoJsonFeatureToMap_Network(NetworkGeometry);
     await AddGeoJsonFeatureToMap_User(UserGeometry);
+    if (ForcedGeometry) await AddGeoJsonFeatureToMap_Forced(ForcedGeometry);
+
+    // Reconstruct connection lines from geometry if not in model (old .phy files)
+    if (!ConnectionLines && UserGeometry && NetworkGeometry) {
+        const pointFeatures = await getNearestPointsOfFeatureCollectionAndLine(SourceGeometry, NetworkGeometry, UserGeometry);
+        const newPointFeatures = turf.featureCollection(pointFeatures);
+        ConnectionLines = connectPoints(UserGeometry, newPointFeatures);
+    }
+
+    // Show house connection lines as blue streets — slider stays at 0
+    if (ConnectionLines) {
+        await AddGeoJsonFeatureToMap_UserOneLine(ConnectionLines);
+    }
+
+    // Slider starts at 1 (nothing built yet) — user builds network by dragging
+    document.getElementById('slider').value = 1;
 
 }
 
@@ -86,17 +113,61 @@ async function calculate(){
 
     ShowLoadDataClass()
 
-    var pointFeatures = await getNearestPointsOfFeatureCollectionAndLine(SourceGeometry, NetworkGeometry, UserGeometry);
+    // Copy UserGeometry so the original is never mutated.
+    // Property objects are also copied so we can stamp forcedWeight onto them
+    // without affecting the source data across re-runs.
+    const userGeomForCalc = {
+        type: 'FeatureCollection',
+        features: UserGeometry.features.map(f => ({ ...f, properties: { ...f.properties } }))
+    };
+
+    // ── Apply forced connections ───────────────────────────────
+    // For each forced point: if it overlaps a demand point (≤10 m)
+    // that demand point is promoted to forced (keeps its value).
+    // Otherwise a zero-demand forced placeholder is inserted.
+    if (ForcedGeometry) {
+        const OVERLAP_KM = 0.001; // 1 metre — must be essentially the same point
+        for (const ff of ForcedGeometry.features) {
+            if (ff.geometry.type !== 'Point') continue;
+
+            // Find the single nearest demand point within 1 m
+            let nearestIdx  = -1;
+            let nearestDist = Infinity;
+            for (let i = 0; i < userGeomForCalc.features.length; i++) {
+                const uf = userGeomForCalc.features[i];
+                if (uf.geometry.type !== 'Point') continue;
+                const d = turf.distance(ff, uf, { units: 'kilometers' });
+                if (d < OVERLAP_KM && d < nearestDist) {
+                    nearestDist = d;
+                    nearestIdx  = i;
+                }
+            }
+
+            if (nearestIdx >= 0) {
+                // Promote that single demand point to forced
+                userGeomForCalc.features[nearestIdx].properties.forced = true;
+            } else {
+                // Standalone forced point — no real demand value
+                userGeomForCalc.features.push({
+                    type: 'Feature',
+                    geometry: ff.geometry,
+                    properties: { value: 0, forced: true }
+                });
+            }
+        }
+    }
+
+    var pointFeatures = await getNearestPointsOfFeatureCollectionAndLine(SourceGeometry, NetworkGeometry, userGeomForCalc);
 
     var newPointFeatures = turf.featureCollection(pointFeatures);
 
     ConnectionPoints = newPointFeatures;
 
-    var lines = connectPoints(UserGeometry, newPointFeatures);
+    ConnectionLines = connectPoints(userGeomForCalc, newPointFeatures);
 
-    await AddGeoJsonFeatureToMap_UserOneLine(lines);
+    await AddGeoJsonFeatureToMap_UserOneLine(ConnectionLines);
 
-    var FragmentedNetwork = await getFragmentedLineNetwork(NetworkGeometry, lines);
+    var FragmentedNetwork = await getFragmentedLineNetwork(NetworkGeometry, ConnectionLines);
 
     var CompleteNetwork = await getCompleteNetwork(FragmentedNetwork, ConnectionPoints);
 
@@ -104,7 +175,7 @@ async function calculate(){
     var initialNetwork = turf.featureCollection(SourceGeometry.features);
     await AddGeoJsonFeatureToMap_EntireNetwork(initialNetwork);
 
-    [EntireNetwork, EntireUsage] = await calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, UserGeometry)
+    [EntireNetwork, EntireUsage] = await calculateTheEntireNetwork(CompleteNetwork, SourceGeometry, userGeomForCalc)
     //Display on map
     
     for (let i = 0; i < EntireNetwork.length; i++) {
@@ -173,10 +244,10 @@ async function SliderMove(){
     UsageProfitElement.innerHTML = "Nutzlast pro Meter: " + Math.round(EntireNetwork[SelectedData.length-1].PathTotalProfit) +" kWh/m";
 
     const UsageNumElement = document.getElementById('UsageNum');
-    UsageNumElement.innerHTML = "Nutzlast: " + Math.round(EntireNetwork[SelectedData.length-1].PathValue) + " kWh";
+    UsageNumElement.innerHTML = "Nutzlast: " + Math.round(Math.round(EntireNetwork[SelectedData.length-1].PathValue)/1000/10)/100 + " GWh";
 
     const TotalLengthElement = document.getElementById('TotalLength');
-    TotalLengthElement.innerHTML = "Gesamtlänge: " + Math.round(EntireNetwork[SelectedData.length-1].PathLength) + " Meter";
+    TotalLengthElement.innerHTML = "Gesamtlänge: " + Math.round(Math.round(EntireNetwork[SelectedData.length-1].PathLength)/10)/100 + " Kilometer";
 
 
 }
@@ -245,12 +316,14 @@ async function Export() {
         SourceGeometry: SourceGeometry,
         NetworkGeometry: NetworkGeometry,
         UserGeometry: UserGeometry,
+        ForcedGeometry: ForcedGeometry || null,
         TotalEndOutputDisplay: TotalEndOutputDisplay,
         TotalEndUsageDisplay: TotalEndUsageDisplay,
         EntireUsageOccurence: EntireUsageOccurence,
         EntireNetwork: EntireNetwork,
         EntireUsageId: EntireUsageId,
-        EntireUsage: EntireUsage
+        EntireUsage: EntireUsage,
+        ConnectionLines: ConnectionLines
     })
 
 
@@ -267,4 +340,54 @@ function download(content, fileName, contentType) {
     a.href = URL.createObjectURL(file);
     a.download = fileName;
     a.click();
+}
+
+async function resetToInput() {
+    // Clear calculation results
+    ConnectionPoints = undefined;
+    ConnectionLines = undefined;
+    EntireNetwork = undefined;
+    EntireUsage = undefined;
+    TotalEndOutputDisplay = [];
+    TotalEndUsageDisplay = [];
+    EntireUsageOccurence = [];
+    EntireUsageId = [];
+    UsageMin = undefined;
+    UsageMax = undefined;
+
+    // Remove calculation map layers, keep Source/Network/User
+    await RemoveLayer(UserOnLineList);
+    await RemoveLayer(EntireNetworkGlowList);
+    await RemoveLayer(EntireNetworkList);
+    await RemoveLayer(EndUserValueList);
+    await RemoveLayer(CurrentConnectionList);
+
+    // Clear chart
+    document.getElementById('chartPanel').innerHTML = '';
+
+    // Reset slider
+    const slider = document.getElementById('slider');
+    slider.min = 1;
+    slider.max = 10;
+    slider.value = 1;
+
+    // Reset result labels
+    document.getElementById('UsageProfit').innerHTML = '—';
+    document.getElementById('UsageNum').innerHTML = '—';
+    document.getElementById('TotalLength').innerHTML = '—';
+
+    // Restore UI: show load bar, hide charts/slider/results/handle, expand map
+    document.querySelector('.LoadData').style.display = '';
+    const handle = document.getElementById('resizeHandle');
+    handle.style.visibility = 'hidden';
+    handle.style.height = '0';
+    document.querySelector('.InLoading').style.visibility = 'hidden';
+    document.querySelector('.InLoading').style.height = '0';
+    document.querySelector('.BarPlot').style.visibility = 'hidden';
+    document.querySelector('.BarPlot').style.height = '0';
+    document.querySelector('.Slider').style.visibility = 'hidden';
+    document.querySelector('.Slider').style.height = '0';
+    document.querySelector('.Results').style.visibility = 'hidden';
+    document.querySelector('.Results').style.height = '0';
+    document.querySelector('.DisplayData').style.height = '93vh';
 }
