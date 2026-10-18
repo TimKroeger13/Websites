@@ -406,6 +406,12 @@ function fmtDate(value) {
     return d.toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function fmtDownloads(n) {
+    const zahl = Number(n);
+    if (!isFinite(zahl) || zahl <= 0) return null;   // null, 0 oder fehlend: gar nichts zeigen
+    return zahl.toLocaleString("de-DE") + (zahl === 1 ? " Download" : " Downloads");
+}
+
 function esc(s) {
     return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
@@ -417,6 +423,22 @@ async function fromManifest() {
     const data = await res.json();
     const arr = Array.isArray(data) ? data : (data.files || []);
     return arr.map(f => typeof f === "string" ? { name: f } : f);
+}
+
+// Downloadzahlen: files/downloads.json, eine flache Liste  Dateiname -> Anzahl.
+// Sie wird auf dem Server aus dem Zugriffsprotokoll erzeugt (count-downloads.sh)
+// und bewusst getrennt von files.json gehalten: die eine Datei kommt vom
+// Server, die andere vom Rechner zu Hause - so ueberschreibt keine die andere.
+// Fehlt sie, zeigt die Seite einfach keine Zahlen.
+async function fromCounter() {
+    try {
+        const res = await fetch(FOLDER + "downloads.json", { cache: "no-store" });
+        if (!res.ok) return {};
+        const data = await res.json();
+        return (data && typeof data === "object") ? (data.downloads || data) : {};
+    } catch (e) {
+        return {};
+    }
 }
 
 // 2. Versuch: Directory-Listing des Webservers auslesen (Apache/nginx autoindex)
@@ -455,8 +477,12 @@ function render(files, filter) {
 
     list.innerHTML = shown.map(f => {
         const t = typeOf(f.name);
-        const facts = [fmtSize(f.size), fmtDate(f.modified || f.date), f.version ? "Version " + f.version : null]
-            .filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("");
+        const facts = [
+            fmtSize(f.size),
+            fmtDate(f.modified || f.date),
+            f.version ? "Version " + f.version : null,
+            fmtDownloads(f.downloads)
+        ].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("");
         return `
         <a class="item" href="${FOLDER}${encodeURIComponent(f.name)}" download>
             <div class="badge" style="background:${t.color}">${esc(t.label)}</div>
@@ -490,6 +516,13 @@ function render(files, filter) {
             return;
         }
     }
+
+    const zaehler = await fromCounter();
+    files.forEach(f => {
+        if (f.downloads === undefined && zaehler[f.name] !== undefined) {
+            f.downloads = zaehler[f.name];
+        }
+    });
 
     files.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
     render(files);

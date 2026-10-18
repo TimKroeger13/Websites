@@ -29,13 +29,18 @@ In PowerShell im Ordner G:\Repos\Websites\Software :
 
     powershell -ExecutionPolicy Bypass -File .\make-manifest.ps1
 
-Das schreibt files\files.json (Name, Groesse, Datum).
+Das schreibt files\files.json (Name, Groesse, Datum, Version).
 Die Webseite liest diese Datei - ohne den Schritt taucht
 die neue Datei nicht in der Liste auf.
 
+Die Versionsnummer liest das Skript aus der EXE selbst (dort
+steht sie im Dateikopf, Inno Setup traegt sie ein). Von Hand
+nachtragen muss man sie also nicht - und sie kann auch nicht
+veralten, wenn eine neue EXE unter altem Namen dazukommt.
+
 Optional: in files.json von Hand ergaenzen -
-    "description": "Kurzbeschreibung",
-    "version": "1.2.0"
+    "description": "Kurzbeschreibung"
+    "version": "1.0"   nur bei Dateien ohne Dateikopf, z.B. ZIP
 Diese Angaben bleiben beim naechsten Lauf des Skripts erhalten.
 
 
@@ -46,13 +51,17 @@ Einzelne Datei:
 
     scp "G:\Repos\Websites\Software\files\MeinTool.exe" BENUTZER@SERVER:ZIELPFAD/files/
 
+######## HERE
+    scp "G:\Repos\Websites\Software\files\LolGroupBotAgent-Setup.exe" jerry@157.230.20.182:/home/jerry/Websites/Software/files/
+
 Kompletter Ordner inkl. index.html (Punkt am Ende beachten):
 
     scp -r "G:\Repos\Websites\Software\." BENUTZER@SERVER:ZIELPFAD/
 
 Nur die Dateiliste nachschieben:
 
-    scp "G:\Repos\Websites\Software\files\files.json" BENUTZER@SERVER:ZIELPFAD/files/
+######## HERE
+    scp "G:\Repos\Websites\Software\files\files.json" jerry@157.230.20.182:/home/jerry/Websites/Software/files/
 
 
 ---------------------------------------------------------
@@ -60,12 +69,17 @@ Nur die Dateiliste nachschieben:
 ---------------------------------------------------------
 Braucht rsync (z.B. ueber WSL oder Git Bash):
 
-    rsync -avz --delete "/g/Repos/Websites/Software/" BENUTZER@SERVER:ZIELPFAD/
+    rsync -avz --delete --exclude "files/downloads.json" \
+          "/g/Repos/Websites/Software/" BENUTZER@SERVER:ZIELPFAD/
 
   -a  Rechte/Zeitstempel behalten
   -v  zeigt was passiert
   -z  komprimiert waehrend der Uebertragung
   --delete  loescht auf dem Server, was lokal weg ist  (VORSICHT)
+
+  --exclude ist wichtig: downloads.json entsteht auf dem Server
+  und liegt hier nie vor. Ohne die Zeile wuerde --delete die
+  gezaehlten Downloads bei jedem Hochladen wegwerfen.
 
 Testlauf ohne etwas zu veraendern: zusaetzlich --dry-run anhaengen.
 
@@ -106,6 +120,41 @@ Upload auf den Server.
 Pruefen, was wirklich committet wuerde:
 
     git -C G:\Repos\Websites status --porcelain -uall
+
+
+---------------------------------------------------------
+5b) Downloadzaehler (einmalig einrichten)
+---------------------------------------------------------
+Die Seite zeigt hinter jeder Datei "123 Downloads", sobald
+files/downloads.json auf dem Server liegt. Fehlt die Datei,
+steht dort einfach nichts - die Seite laeuft normal weiter.
+
+Gezaehlt wird aus dem Zugriffsprotokoll des Webservers. Kein
+PHP, keine Datenbank, kein zusaetzlicher Dienst: die Seite
+bleibt statisch.
+
+Einmalig:
+
+    scp "G:\Repos\Websites\Software\count-downloads.sh" jerry@157.230.20.182:/home/jerry/Websites/Software/
+    ssh jerry@157.230.20.182
+    chmod +x /home/jerry/Websites/Software/count-downloads.sh
+    /home/jerry/Websites/Software/count-downloads.sh
+
+Der letzte Befehl gibt die gezaehlten Dateien aus. Kommt
+"Keine Downloads gefunden", stimmen die Pfade oben im Skript
+nicht - LOGS (Standard /var/log/nginx) und PFAD (der Teil der
+URL vor dem Dateinamen) anpassen.
+
+Danach stuendlich automatisch:
+
+    crontab -e
+    17 * * * * /home/jerry/Websites/Software/count-downloads.sh >/dev/null 2>&1
+
+Gezaehlt wird jeder vollstaendige Abruf (GET mit Status 200).
+Fortgesetzte Uebertragungen (206) und HEAD-Anfragen bleiben
+draussen, damit ein Download nicht doppelt zaehlt. Die
+rotierten Protokolle (access.log.1, *.gz) werden mitgelesen -
+sonst faenge die Zahl jede Woche wieder bei null an.
 
 
 ---------------------------------------------------------
