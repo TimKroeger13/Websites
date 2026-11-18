@@ -181,11 +181,30 @@ Danach stuendlich automatisch:
     crontab -e
     17 * * * * /home/jerry/Websites/Software/count-downloads.sh >/dev/null 2>&1
 
+Diesen Schritt WIRKLICH machen und nachsehen, ob er steht:
+
+    crontab -l | grep count-downloads
+
+Ohne ihn bleibt die einmal von Hand erzeugte downloads.json fuer immer
+stehen, und auf der Seite steht bei jeder neuen Version "noch keine
+Downloads" - genau das ist zwischen Oktober und November 2026 passiert.
+Liest der Benutzer die Protokolle in /var/log/nginx nicht (meist gehoeren
+sie root:adm), dann stattdessen in die crontab von root:
+
+    sudo crontab -e
+
 Gezaehlt wird jeder vollstaendige Abruf (GET mit Status 200).
 Fortgesetzte Uebertragungen (206) und HEAD-Anfragen bleiben
 draussen, damit ein Download nicht doppelt zaehlt. Die
 rotierten Protokolle (access.log.1, *.gz) werden mitgelesen -
 sonst faenge die Zahl jede Woche wieder bei null an.
+
+Und weil logrotate die aeltesten Protokolle irgendwann doch
+wegwirft, behaelt das Skript je Datei das Hoehere von alter
+und neu gezaehlter Zahl. Ein Download, der einmal passiert
+ist, verschwindet dadurch nicht wieder. downloads.json also
+nie von Hand loeschen - die Zahl darin ist das Gedaechtnis,
+das Protokoll reicht nur zwei Wochen zurueck.
 
 
 ---------------------------------------------------------

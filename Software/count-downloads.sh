@@ -30,10 +30,22 @@ sammeln() {
     done
 }
 
+# Die bisherigen Zahlen als "name<Tab>anzahl" ausgeben. Das Format ist das
+# eigene von weiter unten, flach und ohne Verschachtelung - deshalb genuegt es,
+# Klammern, Anfuehrungszeichen und Kommas wegzuwerfen.
+alt() {
+    [ -f "$ZIEL" ] || return 0
+    tr -d '{}", ' < "$ZIEL" | awk -F: 'NF == 2 && $1 != "" && $2 != "" {
+        print $1 "\t" $2
+    }'
+}
+
 # Kombiniertes Format:  ip - - [datum] "GET /pfad HTTP/1.1" 200 1234 "ref" "ua"
 #                       $1          $4      $6   $7   $8      $9
 # Nur GET und nur 200: ein 206 ist eine fortgesetzte Uebertragung und wuerde
 # denselben Download mehrfach zaehlen.
+NEU="$ZIEL.neu"
+trap 'rm -f "$NEU" "$ZIEL.tmp"' EXIT
 sammeln | awk -v pfad="$PFAD" '
     $6 == "\"GET" && $9 == 200 && index($7, pfad) == 1 {
         name = substr($7, length(pfad) + 1)
@@ -41,6 +53,24 @@ sammeln | awk -v pfad="$PFAD" '
         if (name == "" || name == "files.json" || name == "downloads.json") next
         anzahl[name]++
     }
+    END {
+        for (name in anzahl) print name "\t" anzahl[name]
+    }
+' > "$NEU"
+
+# Nichts gefunden? Dann lieber die alten Zahlen stehen lassen als sie mit
+# einer leeren Datei zu ueberschreiben. Entweder stimmt der Pfad nicht, oder
+# die Protokolle sind weggerotiert, ohne dass seither jemand geladen hat.
+if [ ! -s "$NEU" ]; then
+    echo "Keine Downloads im Protokoll. Stimmen LOGS=$LOGS und PFAD=$PFAD?" >&2
+    exit 1
+fi
+
+# Gezaehlt wird je Datei das Hoehere von alt und neu. logrotate wirft die
+# aelteren Protokolle irgendwann weg; ein Download, der einmal passiert ist,
+# soll dadurch nicht wieder verschwinden.
+{ alt; cat "$NEU"; } | awk -F'\t' '
+    $2 + 0 > anzahl[$1] { anzahl[$1] = $2 + 0 }
     END {
         printf "{\n"
         erste = 1
@@ -52,14 +82,6 @@ sammeln | awk -v pfad="$PFAD" '
         printf "\n}\n"
     }
 ' > "$ZIEL.tmp"
-
-# Nichts gefunden? Dann lieber die alten Zahlen stehen lassen als sie mit
-# einer leeren Datei zu ueberschreiben - meist stimmt dann nur der Pfad nicht.
-if ! grep -q ':' "$ZIEL.tmp"; then
-    rm -f "$ZIEL.tmp"
-    echo "Keine Downloads gefunden. Stimmen LOGS=$LOGS und PFAD=$PFAD?" >&2
-    exit 1
-fi
 
 mv "$ZIEL.tmp" "$ZIEL"
 echo "downloads.json geschrieben:"
