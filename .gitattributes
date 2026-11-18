@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shellskripte laufen auf dem Server - CRLF macht sie dort unausfuehrbar
+*.sh text eol=lf
