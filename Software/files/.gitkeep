@@ -24,9 +24,16 @@ Wie das geht, steht Schritt fuer Schritt in:
     ../SERVER-UPLOAD.txt
 
 Kurzfassung:
-  1. Datei hier in diesen Ordner kopieren
+  1. Datei hier in diesen Ordner kopieren - MIT VERSIONSNUMMER
+     im Namen, z.B. LolGroupBotAgent-Setup-1.5.0.exe
   2. im Ordner darueber  make-manifest.ps1  ausfuehren
   3. Ordnerinhalt auf den Server kopieren (scp / rsync / WinSCP)
+
+Zur Versionsnummer im Dateinamen: jede Version ist eine eigene
+Datei und bleibt liegen. Die Seite zeigt die neueste gross und
+die aelteren darunter - und weil der Server beim Zaehlen nach
+Dateinamen geht, bekommt so jede Version ihre eigene Downloadzahl.
+Alte Dateien also nicht loeschen und nicht ueberschreiben.
 
 Diese Platzhalterdatei wird von der Downloadseite und vom
 Manifest-Skript ignoriert und taucht in der Liste nicht auf.

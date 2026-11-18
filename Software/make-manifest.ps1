@@ -1,15 +1,23 @@
 # Erzeugt files/files.json aus allen Dateien im Ordner "files".
 # Aufruf:  powershell -ExecutionPolicy Bypass -File .\make-manifest.ps1
 #
-# Die Versionsnummer kommt aus dem Dateikopf der EXE selbst - Inno Setup und
-# PyInstaller schreiben sie dort hinein. Das ist wichtig, weil der Dateiname
-# beim naechsten Release derselbe bleibt: wuerde die Nummer nur aus der alten
-# files.json uebernommen, stuende auf der Seite stillschweigend weiter die
-# Version von vorletzter Woche.
+# Seit der Versionsverwaltung ist eine Datei nicht mehr ein Eintrag, sondern
+# eine *Version* eines Programms. Zusammengefasst wird ueber den Dateinamen:
 #
-# Beschreibungen bleiben erhalten, wenn sie in einer bereits vorhandenen
-# files.json stehen (gleicher Dateiname) - ebenso Versionen von Dateien ohne
-# Dateikopf, etwa ZIP-Archiven.
+#   LolGroupBotAgent-Setup-1.5.0.exe  \
+#   LolGroupBotAgent-Setup-1.4.0.exe   >  ein Programm, drei Versionen
+#   LolGroupBotAgent-Setup-1.2.0.exe  /
+#
+# Die Nummer am Ende macht die Version aus, der Rest den Programmschluessel.
+# Genau dadurch zaehlt das Serverskript (count-downloads.sh) von selbst je
+# Version: es zaehlt Dateinamen, und jede Version ist eine eigene Datei.
+#
+# Die Versionsnummer kommt bevorzugt aus dem Dateikopf der EXE - Inno Setup
+# und PyInstaller schreiben sie dort hinein, und was dort steht, ist die
+# Wahrheit. Der Dateiname ist die Rueckfallebene fuer alles ohne Kopf (ZIP).
+#
+# Von Hand gepflegt und deshalb erhalten bleiben: "name" und "description"
+# des Programms sowie "changes" und "aliases" je Version.
 
 $ErrorActionPreference = 'Stop'
 $root     = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -19,17 +27,16 @@ $manifest = Join-Path $filesDir 'files.json'
 if (-not (Test-Path $filesDir)) { New-Item -ItemType Directory -Path $filesDir | Out-Null }
 
 function Get-DateiVersion($datei) {
-    # Inno Setup und PyInstaller schreiben die Version in den Dateikopf.
-    # ProductVersion zuerst: dort steht "1.2.0", waehrend FileVersion haeufig
-    # auf vier Stellen aufgefuellt wird ("1.2.0.0").
+    # ProductVersion zuerst: dort steht "1.5.0", waehrend FileVersion haeufig
+    # auf vier Stellen aufgefuellt wird ("1.5.0.0").
     $info = $datei.VersionInfo
     foreach ($kandidat in @($info.ProductVersion, $info.FileVersion)) {
         if (-not $kandidat) { continue }
         $wert = $kandidat.Trim()
         # Dateien ohne Versionsangabe melden je nach Typ Nullen statt nichts.
         if (-not $wert -or $wert -match '^0(\.0)*$') { continue }
-        # Nur die vierte Stelle abschneiden ("1.2.0.0" -> "1.2.0"), niemals
-        # aus "1.2.0" ein "1.2" machen.
+        # Nur die vierte Stelle abschneiden ("1.5.0.0" -> "1.5.0"), niemals
+        # aus "1.5.0" ein "1.5" machen.
         if (($wert -split '\.').Count -eq 4 -and $wert.EndsWith('.0')) {
             $wert = $wert -replace '\.0$', ''
         }
@@ -38,41 +45,101 @@ function Get-DateiVersion($datei) {
     return $null
 }
 
-# Bestehende Beschreibungen einlesen
-$old = @{}
-if (Test-Path $manifest) {
-    try {
-        foreach ($e in (Get-Content $manifest -Raw -Encoding UTF8 | ConvertFrom-Json)) {
-            if ($e.name) { $old[$e.name] = $e }
-        }
-    } catch { Write-Warning "Alte files.json konnte nicht gelesen werden - wird neu erstellt." }
+function Split-Name($dateiname) {
+    # "LolGroupBotAgent-Setup-1.5.0.exe" -> Schluessel + Version aus dem Namen.
+    # Ohne Nummer im Namen ist der Stamm der Schluessel und die Version offen.
+    $stamm = [IO.Path]::GetFileNameWithoutExtension($dateiname)
+    if ($stamm -match '^(?<basis>.+?)[-_ ]v?(?<version>\d+(\.\d+)+)$') {
+        return @{ schluessel = $Matches.basis; version = $Matches.version }
+    }
+    return @{ schluessel = $stamm; version = $null }
 }
 
-$skip = @('files.json', '.gitkeep', 'index.html')
+# Bestehendes Manifest einlesen - alles von Hand Gepflegte wird uebernommen.
+$altProgramm = @{}   # schluessel -> @{ name; description }
+$altVersion  = @{}   # dateiname  -> @{ changes; aliases; version }
+if (Test-Path $manifest) {
+    try {
+        $alt = Get-Content $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($p in @($alt)) {
+            if ($p.versions) {
+                if ($p.id) { $altProgramm[$p.id] = $p }
+                foreach ($v in $p.versions) {
+                    if ($v.file) { $altVersion[$v.file] = $v }
+                }
+            } elseif ($p.name) {
+                # Altes Format: ein Eintrag je Datei.
+                $altVersion[$p.name] = $p
+                $teile = Split-Name $p.name
+                $altProgramm[$teile.schluessel] = $p
+            }
+        }
+    } catch { Write-Warning "Alte files.json nicht lesbar - wird neu erstellt." }
+}
 
-$entries = Get-ChildItem -Path $filesDir -File -Force |
+$skip = @('files.json', 'downloads.json', '.gitkeep', 'index.html')
+
+$programme = [ordered]@{}
+
+Get-ChildItem -Path $filesDir -File -Force |
     Where-Object { $skip -notcontains $_.Name } |
     Sort-Object Name |
     ForEach-Object {
-        $e = [ordered]@{
-            name     = $_.Name
-            size     = $_.Length
-            modified = $_.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss')
-        }
+        $teile   = Split-Name $_.Name
         $version = Get-DateiVersion $_
-        if (-not $version -and $old.ContainsKey($_.Name)) {
-            # Kein Dateikopf (ZIP, PDF, ...) - dann gilt, was von Hand eingetragen wurde.
-            $version = $old[$_.Name].version
+        if (-not $version) { $version = $teile.version }
+        if (-not $version -and $altVersion.ContainsKey($_.Name)) {
+            $version = $altVersion[$_.Name].version
         }
-        if ($version) { $e.version = $version }
-        if ($old.ContainsKey($_.Name) -and $old[$_.Name].description) {
-            $e.description = $old[$_.Name].description
+
+        $eintrag = [ordered]@{
+            version  = $version
+            file     = $_.Name
+            size     = $_.Length
+            released = $_.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss')
         }
+        # Von Hand gepflegt: was sich in dieser Version geaendert hat, und
+        # unter welchen frueheren Namen sie schon gezaehlt wurde.
+        if ($altVersion.ContainsKey($_.Name)) {
+            if ($altVersion[$_.Name].changes) { $eintrag.changes = $altVersion[$_.Name].changes }
+            if ($altVersion[$_.Name].aliases) { $eintrag.aliases = @($altVersion[$_.Name].aliases) }
+        }
+
+        $key = $teile.schluessel
+        if (-not $programme.Contains($key)) {
+            $kopf = [ordered]@{ id = $key; name = $key; description = $null; versions = @() }
+            if ($altProgramm.ContainsKey($key)) {
+                if ($altProgramm[$key].name)        { $kopf.name = $altProgramm[$key].name }
+                if ($altProgramm[$key].description) { $kopf.description = $altProgramm[$key].description }
+            }
+            $programme[$key] = $kopf
+        }
+        $programme[$key].versions += [pscustomobject]$eintrag
         Write-Host ("  {0}{1}" -f $_.Name, $(if ($version) { " - Version $version" } else { "" }))
-        [pscustomobject]$e
     }
 
-$json = if ($entries) { ConvertTo-Json @($entries) -Depth 4 } else { '[]' }
+# Neueste zuerst, und zwar der Groesse nach: sonst stuende 1.10.0 vor 1.9.0.
+function Sortierschluessel($version) {
+    $teile = @()
+    foreach ($t in ("$version" -split '[.\-+]')) {
+        $n = 0
+        if ([int]::TryParse($t, [ref]$n)) { $teile += $n } else { $teile += -1 }
+    }
+    while ($teile.Count -lt 4) { $teile += 0 }
+    # Als Zeichenkette mit fester Breite, damit der Vergleich stimmt.
+    ($teile[0..3] | ForEach-Object { '{0:D6}' -f [math]::Max(0, $_) }) -join '.'
+}
+
+$ausgabe = @()
+foreach ($key in $programme.Keys) {
+    $p = $programme[$key]
+    $p.versions = @($p.versions | Sort-Object @{ Expression = { Sortierschluessel $_.version }; Descending = $true })
+    if (-not $p.description) { $p.Remove('description') }
+    $ausgabe += [pscustomobject]$p
+}
+
+$json = if ($ausgabe) { ConvertTo-Json @($ausgabe) -Depth 6 } else { '[]' }
 [System.IO.File]::WriteAllText($manifest, $json, (New-Object System.Text.UTF8Encoding($false)))
 
-Write-Host ("files.json geschrieben: {0} Datei(en)" -f @($entries).Count) -ForegroundColor Green
+$anzahlVersionen = ($ausgabe | ForEach-Object { $_.versions.Count } | Measure-Object -Sum).Sum
+Write-Host ("files.json geschrieben: {0} Programm(e), {1} Version(en)" -f $ausgabe.Count, $anzahlVersionen) -ForegroundColor Green

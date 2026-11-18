@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Software &ndash; Tim Hochgreve</title>
-<meta name="description" content="Kleine Programme und Tools von Tim Hochgreve zum kostenlosen Download.">
+<meta name="description" content="Kleine Programme und Tools von Tim Hochgreve zum kostenlosen Download, mit allen frueheren Versionen.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     :root {
@@ -13,14 +13,18 @@
       --bg-b: #e0f7fa;
       --card-bg: #f9fafb;
       --accent: #2563eb;
+      --accent-dark: #1d4ed8;
       --accent-soft: rgba(37, 99, 235, 0.12);
       --text: #0f172a;
       --muted: #6b7280;
+      --faint: #9ca3af;
       --border: #d1d5db;
       --chip-bg: #e5e7eb;
       --section-bg: #eef2ff;
+      --ok: #16a34a;
       --radius-lg: 18px;
       --radius-md: 10px;
+      --radius-sm: 7px;
     }
 
     * {
@@ -164,28 +168,27 @@
       white-space: nowrap;
     }
 
-    /* ---------- Dateiliste ---------- */
-    .list { display: grid; gap: 10px; }
+    /* ---------- Programmkarten ---------- */
+    .list { display: grid; gap: 14px; }
 
-    .item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 12px 14px;
+    .card {
       border-radius: var(--radius-md);
       border: 1px solid var(--border);
       background: var(--section-bg);
-      text-decoration: none;
-      color: inherit;
-      transition: background .2s ease, border-color .2s ease,
-                  transform .15s ease, box-shadow .2s ease;
+      overflow: hidden;
+      transition: border-color .2s ease, box-shadow .2s ease;
     }
 
-    .item:hover {
-      background: #ffffff;
+    .card:hover {
       border-color: var(--accent);
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14);
+    }
+
+    .card-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
     }
 
     .badge {
@@ -204,21 +207,41 @@
 
     .meta { flex: 1 1 auto; min-width: 0; }
 
+    .name-row {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
     .name {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       word-break: break-word;
     }
 
+    .chip {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .03em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      white-space: nowrap;
+    }
+
+    .chip.neu { background: rgba(22, 163, 74, .14); color: var(--ok); }
+
     .desc {
-      margin-top: 3px;
+      margin-top: 5px;
       font-size: 13px;
       color: var(--muted);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .facts {
-      margin-top: 4px;
+      margin-top: 7px;
       font-size: 12px;
       color: var(--muted);
       display: flex;
@@ -226,27 +249,108 @@
       gap: 4px 12px;
     }
 
+    .facts b { color: var(--text); font-weight: 600; }
+
     .dl {
       flex: 0 0 auto;
       font-size: 13px;
-      padding: 7px 14px;
+      padding: 9px 16px;
       border-radius: 999px;
       border: 1px solid var(--accent);
       background: var(--accent);
       color: #ffffff;
+      text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      transition: background .2s ease, box-shadow .2s ease;
+      white-space: nowrap;
+      transition: background .2s ease, box-shadow .2s ease, transform .15s ease;
     }
 
-    .item:hover .dl {
-      background: #1d4ed8;
-      border-color: #1d4ed8;
+    .dl:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      transform: translateY(-1px);
       box-shadow: 0 10px 22px rgba(37, 99, 235, 0.35);
     }
 
     .dl svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* ---------- Versionsverlauf ---------- */
+    details.versions {
+      border-top: 1px dashed var(--border);
+      background: rgba(255, 255, 255, .55);
+    }
+
+    details.versions > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 9px 16px;
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      user-select: none;
+    }
+
+    details.versions > summary::-webkit-details-marker { display: none; }
+
+    details.versions > summary:hover { color: var(--accent); }
+
+    summary .pfeil {
+      width: 12px; height: 12px;
+      fill: currentColor;
+      transition: transform .18s ease;
+    }
+
+    details[open] summary .pfeil { transform: rotate(90deg); }
+
+    .vtable {
+      padding: 0 16px 12px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .vrow {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: background .15s ease;
+    }
+
+    .vrow:hover { background: #ffffff; }
+
+    .vrow .vnum {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 58px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .vrow .vzahl { font-variant-numeric: tabular-nums; }
+
+    .vrow .vhol {
+      margin-left: auto;
+      color: var(--accent);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .vrow .vchanges {
+      flex: 1 1 100%;
+      color: var(--faint);
+      line-height: 1.5;
+      padding-top: 2px;
+    }
+
+    .vrow.aktuell .vnum { color: var(--accent-dark); }
 
     /* ---------- Hinweise ---------- */
     .note {
@@ -308,8 +412,9 @@
     .footer-links { display: flex; flex-wrap: wrap; gap: 14px; }
 
     @media (max-width: 560px) {
-      .item { flex-wrap: wrap; }
+      .card-main { flex-wrap: wrap; }
       .dl { width: 100%; justify-content: center; }
+      .vrow .vhol { margin-left: 0; }
     }
 </style>
 </head>
@@ -321,8 +426,8 @@
         <h1>Software von Tim Hochgreve</h1>
         <p class="tagline">
             Hier sammle ich kleine Programme und Tools, die im Laufe meiner Projekte entstanden sind &ndash;
-            frei zum Herunterladen und Ausprobieren. Einfach auf einen Eintrag klicken, dann startet der Download sofort.
-            Bei Fragen oder Feedback: schreib mir gerne.
+            frei zum Herunterladen und Ausprobieren. Der gro&szlig;e Knopf l&auml;dt immer die neueste Fassung;
+            darunter stehen alle fr&uuml;heren, falls einmal etwas nicht l&auml;uft.
         </p>
         <div class="btn-row">
             <a class="btn" href="https://tkroeger.com/index/">
@@ -406,31 +511,106 @@ function fmtDate(value) {
     return d.toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function fmtDownloads(n) {
+function fmtZahl(n) {
     const zahl = Number(n);
-    if (!isFinite(zahl) || zahl <= 0) return null;   // null, 0 oder fehlend: gar nichts zeigen
-    return zahl.toLocaleString("de-DE") + (zahl === 1 ? " Download" : " Downloads");
+    return isFinite(zahl) ? zahl.toLocaleString("de-DE") : "0";
+}
+
+// Keine Zahl bei null: "0 Downloads" unter einer frisch gestellten Version
+// sieht nach einem Fehler aus, obwohl es nur heisst, dass noch niemand
+// zugegriffen hat.
+function fmtDownloads(n, wort) {
+    const zahl = Number(n);
+    if (!isFinite(zahl) || zahl <= 0) return null;
+    return fmtZahl(zahl) + " " + (wort || (zahl === 1 ? "Download" : "Downloads"));
 }
 
 function esc(s) {
     return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
-// 1. Versuch: gepflegtes / generiertes Manifest files/files.json
-async function fromManifest() {
+// Versionsnummern der Groesse nach, nicht alphabetisch: sonst stuende 1.10.0
+// vor 1.9.0. Alles, was keine Zahl ist, wandert ans Ende.
+function vergleicheVersion(a, b) {
+    const zerlegen = v => String(v || "").split(/[.+-]/).map(t => parseInt(t, 10));
+    const x = zerlegen(a), y = zerlegen(b);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+        const l = isFinite(x[i]) ? x[i] : -1;
+        const r = isFinite(y[i]) ? y[i] : -1;
+        if (l !== r) return r - l;   // absteigend: neueste zuerst
+    }
+    return 0;
+}
+
+// --------------------------------------------------------------- Datenquellen
+
+// files/files.json. Zwei Formen werden verstanden:
+//
+//   neu  [{ id, name, description, versions: [{ version, file, size, ... }] }]
+//   alt  [{ name, size, modified, version, description }]              (je Datei)
+//
+// Die alte Form wird in die neue uebersetzt, damit eine aeltere files.json
+// auf dem Server die Seite nicht leer laesst - etwa, wenn das Manifest dort
+// noch nicht neu erzeugt wurde.
+async function vomManifest() {
     const res = await fetch(FOLDER + "files.json", { cache: "no-store" });
     if (!res.ok) throw new Error("kein Manifest");
     const data = await res.json();
-    const arr = Array.isArray(data) ? data : (data.files || []);
-    return arr.map(f => typeof f === "string" ? { name: f } : f);
+    const arr = Array.isArray(data) ? data : (data.programs || data.files || []);
+    return arr.map(normalisieren).filter(Boolean);
 }
 
-// Downloadzahlen: files/downloads.json, eine flache Liste  Dateiname -> Anzahl.
-// Sie wird auf dem Server aus dem Zugriffsprotokoll erzeugt (count-downloads.sh)
-// und bewusst getrennt von files.json gehalten: die eine Datei kommt vom
-// Server, die andere vom Rechner zu Hause - so ueberschreibt keine die andere.
-// Fehlt sie, zeigt die Seite einfach keine Zahlen.
-async function fromCounter() {
+function normalisieren(eintrag) {
+    if (typeof eintrag === "string") eintrag = { name: eintrag };
+    if (!eintrag || typeof eintrag !== "object") return null;
+
+    if (Array.isArray(eintrag.versions) && eintrag.versions.length) {
+        return {
+            id: eintrag.id || eintrag.name,
+            name: eintrag.name || eintrag.id,
+            description: eintrag.description || "",
+            versions: eintrag.versions
+                .filter(v => v && v.file)
+                .sort((a, b) => vergleicheVersion(a.version, b.version))
+        };
+    }
+
+    // Alte Form: eine Datei ist ein Programm mit genau einer Version.
+    if (!eintrag.name) return null;
+    return {
+        id: eintrag.name,
+        name: eintrag.name,
+        description: eintrag.description || "",
+        versions: [{
+            version: eintrag.version || null,
+            file: eintrag.name,
+            size: eintrag.size,
+            released: eintrag.modified || eintrag.date
+        }]
+    };
+}
+
+// Directory-Listing als letzte Rueckfallebene (Apache/nginx autoindex).
+async function vomVerzeichnis() {
+    const res = await fetch(FOLDER, { cache: "no-store" });
+    if (!res.ok) throw new Error("kein Listing");
+    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+    const skip = ["files.json", "downloads.json", "index.html", "index.htm", ".gitkeep"];
+    return [...doc.querySelectorAll("a[href]")]
+        .map(a => a.getAttribute("href"))
+        .filter(h => h && !h.startsWith("?") && !h.startsWith("/") && !h.startsWith("#")
+                     && !h.includes("://") && !h.endsWith("/") && h !== "..")
+        .map(h => decodeURIComponent(h.split("/").pop()))
+        .filter(n => !skip.includes(n.toLowerCase()))
+        .map(n => normalisieren({ name: n }));
+}
+
+// Downloadzahlen: files/downloads.json, eine flache Liste Dateiname -> Anzahl.
+// Sie wird auf dem Server aus dem Zugriffsprotokoll erzeugt
+// (count-downloads.sh) und bewusst getrennt von files.json gehalten: die eine
+// kommt vom Server, die andere vom Rechner zu Hause - so ueberschreibt keine
+// die andere. Fehlt sie, zeigt die Seite einfach keine Zahlen.
+async function vomZaehler() {
     try {
         const res = await fetch(FOLDER + "downloads.json", { cache: "no-store" });
         if (!res.ok) return {};
@@ -441,32 +621,107 @@ async function fromCounter() {
     }
 }
 
-// 2. Versuch: Directory-Listing des Webservers auslesen (Apache/nginx autoindex)
-async function fromDirectoryListing() {
-    const res = await fetch(FOLDER, { cache: "no-store" });
-    if (!res.ok) throw new Error("kein Listing");
-    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
-    const skip = ["files.json", "index.html", "index.htm", ".gitkeep"];
-    return [...doc.querySelectorAll("a[href]")]
-        .map(a => a.getAttribute("href"))
-        .filter(h => h && !h.startsWith("?") && !h.startsWith("/") && !h.startsWith("#")
-                     && !h.includes("://") && !h.endsWith("/") && h !== "..")
-        .map(h => ({ name: decodeURIComponent(h.split("/").pop()) }))
-        .filter(f => !skip.includes(f.name.toLowerCase()));
+// ------------------------------------------------------------------ Rendering
+
+function zaehlerFuer(version, zaehler) {
+    // "aliases" faengt Umbenennungen auf: die 1.2.0 hiess frueher schlicht
+    // LolGroupBotAgent-Setup.exe, und die unter diesem Namen gezaehlten
+    // Downloads gehoeren weiterhin zu ihr.
+    const namen = [version.file].concat(version.aliases || []);
+    return namen.reduce((summe, n) => summe + (Number(zaehler[n]) || 0), 0);
 }
 
-function render(files, filter) {
+function versionsZeile(v, aktuell) {
+    const teile = [
+        fmtDate(v.released),
+        fmtSize(v.size),
+        fmtDownloads(v.downloads)
+    ].filter(Boolean);
+
+    return `
+    <a class="vrow${aktuell ? " aktuell" : ""}" href="${FOLDER}${encodeURIComponent(v.file)}" download>
+        <span class="vnum">${esc(v.version || "?")}</span>
+        <span class="vzahl">${esc(teile.join(" · "))}</span>
+        <span class="vhol">Herunterladen</span>
+        ${v.changes ? `<span class="vchanges">${esc(v.changes)}</span>` : ""}
+    </a>`;
+}
+
+function karte(p) {
+    const neueste = p.versions[0];
+    const t = typeOf(neueste.file);
+    const gesamt = p.versions.reduce((s, v) => s + (v.downloads || 0), 0);
+
+    const facts = [
+        neueste.version ? `<b>Version ${esc(neueste.version)}</b>` : null,
+        fmtSize(neueste.size),
+        fmtDate(neueste.released),
+        fmtDownloads(gesamt, "Downloads gesamt")
+    ].filter(Boolean).map(x => `<span>${x}</span>`).join("");
+
+    const weitere = p.versions.length - 1;
+    const verlauf = p.versions.length > 1 ? `
+    <details class="versions">
+        <summary>
+            <svg class="pfeil" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Alle ${p.versions.length} Versionen anzeigen
+        </summary>
+        <div class="vtable">
+            ${p.versions.map((v, i) => versionsZeile(v, i === 0)).join("")}
+        </div>
+    </details>` : "";
+
+    return `
+    <div class="card">
+        <div class="card-main">
+            <div class="badge" style="background:${t.color}">${esc(t.label)}</div>
+            <div class="meta">
+                <div class="name-row">
+                    <span class="name">${esc(p.name)}</span>
+                    ${weitere > 0 ? `<span class="chip neu">Neueste</span>` : ""}
+                </div>
+                ${p.description ? `<div class="desc">${esc(p.description)}</div>` : ""}
+                ${facts ? `<div class="facts">${facts}</div>` : ""}
+            </div>
+            <a class="dl" href="${FOLDER}${encodeURIComponent(neueste.file)}" download>
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+                Download
+            </a>
+        </div>
+        ${verlauf}
+    </div>`;
+}
+
+function render(programme, filter) {
     const list = document.getElementById("list");
     const stats = document.getElementById("stats");
     const q = (filter || "").trim().toLowerCase();
-    const shown = q ? files.filter(f => f.name.toLowerCase().includes(q)) : files;
 
-    const total = files.reduce((s, f) => s + (Number(f.size) || 0), 0);
-    stats.textContent = files.length
-        ? (q ? `${shown.length} von ${files.length} Programmen`
-             : `${files.length} Programm${files.length === 1 ? "" : "e"}`) +
-          (total && !q ? ` · ${fmtSize(total)} gesamt` : "")
-        : "";
+    const passt = p => !q
+        || p.name.toLowerCase().includes(q)
+        || (p.description || "").toLowerCase().includes(q)
+        || p.versions.some(v => String(v.version || "").toLowerCase().includes(q));
+    const shown = programme.filter(passt);
+
+    const versionen = programme.reduce((s, p) => s + p.versions.length, 0);
+    const downloads = programme.reduce(
+        (s, p) => s + p.versions.reduce((t, v) => t + (v.downloads || 0), 0), 0);
+
+    if (programme.length) {
+        const teile = [];
+        teile.push(q
+            ? `${shown.length} von ${programme.length} Programmen`
+            : `${programme.length} Programm${programme.length === 1 ? "" : "e"}`);
+        if (!q && versionen > programme.length) {
+            teile.push(`${versionen} Versionen`);
+        }
+        if (!q && downloads > 0) {
+            teile.push(`${fmtZahl(downloads)} Downloads`);
+        }
+        stats.textContent = teile.join(" · ");
+    } else {
+        stats.textContent = "";
+    }
 
     if (!shown.length) {
         list.innerHTML = `<div class="note">${q
@@ -475,39 +730,18 @@ function render(files, filter) {
         return;
     }
 
-    list.innerHTML = shown.map(f => {
-        const t = typeOf(f.name);
-        const facts = [
-            fmtSize(f.size),
-            fmtDate(f.modified || f.date),
-            f.version ? "Version " + f.version : null,
-            fmtDownloads(f.downloads)
-        ].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("");
-        return `
-        <a class="item" href="${FOLDER}${encodeURIComponent(f.name)}" download>
-            <div class="badge" style="background:${t.color}">${esc(t.label)}</div>
-            <div class="meta">
-                <div class="name">${esc(f.name)}</div>
-                ${f.description ? `<div class="desc">${esc(f.description)}</div>` : ""}
-                ${facts ? `<div class="facts">${facts}</div>` : ""}
-            </div>
-            <span class="dl">
-                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-                Download
-            </span>
-        </a>`;
-    }).join("");
+    list.innerHTML = shown.map(karte).join("");
 }
 
 (async function init() {
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    let files = [];
+    let programme = [];
     try {
-        files = await fromManifest();
+        programme = await vomManifest();
     } catch (e) {
         try {
-            files = await fromDirectoryListing();
+            programme = await vomVerzeichnis();
         } catch (e2) {
             document.getElementById("list").innerHTML =
                 `<div class="note">Die Downloadliste l&auml;sst sich gerade nicht laden.<br>
@@ -517,17 +751,15 @@ function render(files, filter) {
         }
     }
 
-    const zaehler = await fromCounter();
-    files.forEach(f => {
-        if (f.downloads === undefined && zaehler[f.name] !== undefined) {
-            f.downloads = zaehler[f.name];
-        }
-    });
+    const zaehler = await vomZaehler();
+    programme.forEach(p => p.versions.forEach(v => {
+        if (v.downloads === undefined) v.downloads = zaehlerFuer(v, zaehler);
+    }));
 
-    files.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
-    render(files);
+    programme.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
+    render(programme);
 
-    document.getElementById("q").addEventListener("input", e => render(files, e.target.value));
+    document.getElementById("q").addEventListener("input", e => render(programme, e.target.value));
 })();
 </script>
 </body>

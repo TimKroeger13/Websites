@@ -17,9 +17,23 @@ Platzhalter vorher ersetzen:
 ---------------------------------------------------------
 1) Neue Datei lokal ablegen
 ---------------------------------------------------------
-Datei einfach hier hineinkopieren:
+Datei hier hineinkopieren:
 
     G:\Repos\Websites\Software\files\
+
+WICHTIG, seit es die Versionsverwaltung gibt:
+Die Versionsnummer gehoert IN DEN DATEINAMEN.
+
+    LolGroupBotAgent-Setup-1.5.0.exe     richtig
+    LolGroupBotAgent-Setup.exe           falsch
+
+Grund: jede Version ist eine eigene Datei. Nur dadurch
+bleibt die alte erreichbar, wenn die neue klemmt - und nur
+dadurch kann der Server die Downloads je Version zaehlen,
+denn er zaehlt Dateinamen.
+
+Die alte Datei wird NICHT geloescht. Sie bleibt liegen und
+erscheint auf der Seite unter "Alle Versionen anzeigen".
 
 
 ---------------------------------------------------------
@@ -38,10 +52,27 @@ steht sie im Dateikopf, Inno Setup traegt sie ein). Von Hand
 nachtragen muss man sie also nicht - und sie kann auch nicht
 veralten, wenn eine neue EXE unter altem Namen dazukommt.
 
-Optional: in files.json von Hand ergaenzen -
-    "description": "Kurzbeschreibung"
-    "version": "1.0"   nur bei Dateien ohne Dateikopf, z.B. ZIP
-Diese Angaben bleiben beim naechsten Lauf des Skripts erhalten.
+Das Skript fasst Dateien desselben Programms zusammen: alles
+vor der Nummer ist der Programmschluessel. Aus
+
+    LolGroupBotAgent-Setup-1.5.0.exe
+    LolGroupBotAgent-Setup-1.2.0.exe
+
+wird ein Eintrag mit zwei Versionen, neueste zuerst.
+
+Von Hand in files.json gepflegt, und beim naechsten Lauf des
+Skripts erhalten bleiben:
+
+  je Programm   "name"         Anzeigename ("LolGroupBot Agent")
+                "description"  Kurzbeschreibung
+
+  je Version    "changes"      was in dieser Version neu ist
+                "aliases"      frueherer Dateiname, falls die
+                               Datei umbenannt wurde - damit
+                               ihre alten Downloads weiter
+                               mitgezaehlt werden
+                "version"      nur bei Dateien ohne Dateikopf
+                               (ZIP, PDF)
 
 
 ---------------------------------------------------------
@@ -52,7 +83,7 @@ Einzelne Datei:
     scp "G:\Repos\Websites\Software\files\MeinTool.exe" BENUTZER@SERVER:ZIELPFAD/files/
 
 ######## HERE
-    scp "G:\Repos\Websites\Software\files\LolGroupBotAgent-Setup.exe" jerry@157.230.20.182:/home/jerry/Websites/Software/files/
+    scp "G:\Repos\Websites\Software\files\LolGroupBotAgent-Setup-1.5.0.exe" jerry@157.230.20.182:/home/jerry/Websites/Software/files/
 
 Kompletter Ordner inkl. index.html (Punkt am Ende beachten):
 
