@@ -516,12 +516,17 @@ function fmtZahl(n) {
     return isFinite(zahl) ? zahl.toLocaleString("de-DE") : "0";
 }
 
-// Keine Zahl bei null: "0 Downloads" unter einer frisch gestellten Version
-// sieht nach einem Fehler aus, obwohl es nur heisst, dass noch niemand
-// zugegriffen hat.
+// Die Null wird ausgeschrieben, nicht verschwiegen.
+//
+// Der erste Entwurf liess sie weg, damit eine frisch gestellte Version nicht
+// nach Misserfolg aussieht. Das Ergebnis war schlimmer: in der Zeile fehlte
+// die Angabe dann ganz, und die Frage "wo sehe ich die Downloads der neuen
+// Version?" hatte keine Antwort. Eine fehlende Zahl verwirrt mehr als eine
+// kleine.
 function fmtDownloads(n, wort) {
     const zahl = Number(n);
-    if (!isFinite(zahl) || zahl <= 0) return null;
+    if (!isFinite(zahl) || zahl < 0) return null;
+    if (zahl === 0) return "noch keine Downloads";
     return fmtZahl(zahl) + " " + (wort || (zahl === 1 ? "Download" : "Downloads"));
 }
 
