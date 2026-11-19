@@ -463,6 +463,12 @@
         &Uuml;ber <em>Weitere Informationen &rarr; Trotzdem ausf&uuml;hren</em> l&auml;sst sich das Programm normal starten.
     </div>
 
+    <div class="hint">
+        <strong>Kleiner Hinweis zu Android:</strong> APK-Dateien direkt auf dem Handy herunterladen und antippen.
+        Beim ersten Mal fragt Android, ob der Browser Apps installieren darf &ndash; <em>Zulassen</em> w&auml;hlen,
+        zur&uuml;ck und <em>Installieren</em>. Updates genauso: neue Version installieren, die Daten bleiben erhalten.
+    </div>
+
     <div class="footer-note">
         <div>&copy; <span id="year"></span> Tim Hochgreve</div>
         <div class="footer-links">
@@ -481,6 +487,7 @@ const FOLDER = "files/";
 // Farbe + Label je Dateityp (Schwerpunkt: Windows-Programme)
 const TYPES = [
     { ext: ["exe"],                            label: "EXE", color: "#2563eb" },
+    { ext: ["apk"],                            label: "APK", color: "#16a34a" },
     { ext: ["msi", "appx", "msix"],            label: "MSI", color: "#6366f1" },
     { ext: ["zip", "7z", "rar", "tar", "gz"],  label: "ZIP", color: "#f59e0b" },
     { ext: ["bat", "cmd", "ps1"],              label: "CMD", color: "#0891b2" },
